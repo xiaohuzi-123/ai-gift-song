@@ -1,0 +1,880 @@
+/* SharePage.css - Immersive Gift Opening Experience */
+
+/* ============ Base Layout ============ */
+.share-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+/* ============ Background Gradient ============ */
+.share-bg-gradient {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    #1a0a2e 0%,
+    #2d1b4e 25%,
+    #1a0a2e 50%,
+    #0d0015 100%
+  );
+  z-index: -2;
+}
+
+/* Add subtle radial glow in center */
+.share-bg-gradient::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150vmax;
+  height: 150vmax;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.08) 0%,
+    rgba(59, 7, 100, 0.05) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ============ Floating Particles ============ */
+.particles-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, #fbbf24, #f59e0b);
+  border-radius: 50%;
+  left: var(--x);
+  bottom: -10px;
+  opacity: 0;
+  animation: floatUp var(--duration) ease-in-out infinite;
+  animation-delay: var(--delay);
+  box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.4);
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* ============ Main Content Container ============ */
+.share-content {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* ============ Envelope Styles ============ */
+.envelope-container {
+  position: relative;
+  cursor: pointer;
+  perspective: 1000px;
+}
+
+.envelope-glow {
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.15), transparent 70%);
+  filter: blur(20px);
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.envelope {
+  position: relative;
+  width: 280px;
+  height: 200px;
+  transform-style: preserve-3d;
+}
+
+.envelope-back {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #d4a574 0%, #c4956a 100%);
+  border-radius: 8px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.envelope-front {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #f5e6d3 0%, #e8d4bc 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.envelope-paper-texture {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.08;
+}
+
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  transform-origin: top center;
+  transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.envelope-flap.opening {
+  transform: rotateX(-180deg);
+  transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.envelope-flap-inner {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #e8d4bc 0%, #dcc7ae 100%);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+}
+
+/* Back of flap (visible when opened) */
+.envelope-flap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #c9b8a5 0%, #bda690 100%);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  transform: rotateX(180deg);
+  backface-visibility: hidden;
+}
+
+.envelope-inner-shadow {
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+  border-radius: 50%;
+  filter: blur(10px);
+}
+
+/* ============ Wax Seal ============ */
+.envelope-wax-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+.envelope-wax-seal:hover:not(.breaking) {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.seal-heart {
+  position: absolute;
+  inset: 15px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c, #991b1b);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fef3c7;
+  font-size: 1.5rem;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Wax seal cracks animation */
+.envelope-wax-seal.breaking .seal-heart {
+  animation: sealShatter 0.8s ease-out forwards;
+}
+
+.envelope-wax-seal.breaking .seal-cracks::before,
+.envelope-wax-seal.breaking .seal-cracks::after {
+  opacity: 1;
+}
+
+.seal-cracks {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #dc2626, #b91c1c, #991b1b);
+  border-radius: 50%;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.seal-cracks::before,
+.seal-cracks::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.seal-cracks::before {
+  top: 20%;
+  left: 30%;
+  width: 3px;
+  height: 40%;
+  transform: rotate(25deg);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+}
+
+.seal-cracks::after {
+  top: 25%;
+  right: 25%;
+  width: 2px;
+  height: 35%;
+  transform: rotate(-15deg);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 60% 70%, 0 100%);
+}
+
+.seal-cracks.animate::before,
+.seal-cracks.animate::after {
+  opacity: 1;
+  animation: crackSpread 0.5s ease-out forwards;
+}
+
+@keyframes crackSpread {
+  0% { transform: scaleY(0) rotate(25deg); }
+  50% { transform: scaleY(1.2) rotate(25deg); }
+  100% { transform: scaleY(1) rotate(25deg); }
+}
+
+/* Seal shards flying off */
+.seal-shard {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-radius: 3px;
+  opacity: 0;
+}
+
+.envelope-wax-seal.breaking .seal-shard {
+  animation: shardFly 0.8s ease-out forwards;
+}
+
+.shard-1 {
+  top: 10%;
+  left: 20%;
+  --tx: -30px;
+  --ty: -20px;
+}
+
+.shard-2 {
+  top: 30%;
+  right: 15%;
+  --tx: 25px;
+  --ty: -25px;
+}
+
+.shard-3 {
+  bottom: 20%;
+  left: 30%;
+  --tx: -20px;
+  --ty: 30px;
+}
+
+@keyframes shardFly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) rotate(180deg);
+  }
+}
+
+@keyframes sealShatter {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  60% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ============ Envelope Text ============ */
+.envelope-text-overlay {
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 0 20px;
+}
+
+.envelope-subtitle {
+  font-family: 'Georgia', serif;
+  font-size: 0.95rem;
+  color: #78350f;
+  font-style: italic;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.envelope-hint {
+  font-size: 0.8rem;
+  color: #a16207;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ============ Opening Phase ============ */
+.envelope-opening {
+  position: relative;
+  perspective: 1000px;
+}
+
+.letter-peek {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  animation: peekUp 0.8s ease-out forwards;
+}
+
+@keyframes peekUp {
+  0% { transform: translateX(-50%) translateY(50px); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.letter-peek-content {
+  background: linear-gradient(180deg, #fef3c7, #fde68a);
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.letter-peek-text {
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  color: #78350f;
+  font-size: 1rem;
+}
+
+/* ============ Letter Styles ============ */
+.letter-container {
+  width: 100%;
+  animation: letterReveal 1s ease-out forwards;
+}
+
+@keyframes letterReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.letter {
+  background: linear-gradient(180deg, #fef9e7, #fef3c7);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.letter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+.letter-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.letter-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  animation: iconBounce 0.6s ease-out;
+}
+
+@keyframes iconBounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.letter-title {
+  font-family: 'Georgia', serif;
+  font-size: 1.75rem;
+  color: #78350f;
+  font-weight: 600;
+}
+
+.letter-body {
+  color: #451a03;
+  line-height: 1.8;
+}
+
+.letter-greeting {
+  font-family: 'Georgia', serif;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.name-highlight {
+  background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.letter-message {
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+.letter-signature {
+  text-align: right;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #d97706;
+}
+
+.letter-signature p {
+  font-family: 'Georgia', serif;
+  color: #78350f;
+}
+
+.signature-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #b45309;
+  font-style: italic;
+}
+
+.personal-note {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+  border-radius: 12px;
+  border-left: 4px solid #f59e0b;
+}
+
+.note-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #92400e;
+  margin-bottom: 0.5rem;
+}
+
+.note-content {
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  color: #78350f;
+  font-size: 0.95rem;
+}
+
+/* ============ Lyrics Card ============ */
+.lyrics-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 7, 100, 0.3));
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.lyrics-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.1rem;
+  color: #e9d5ff;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.lyrics-icon {
+  font-size: 1.25rem;
+}
+
+.lyrics-content {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.9rem;
+  color: #c4b5fd;
+  line-height: 2;
+  white-space: pre-line;
+}
+
+/* Gold highlight for personal details */
+.highlight-gold {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+  padding: 0 2px;
+  border-radius: 4px;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+  animation: highlightGlow 2s ease-in-out infinite;
+}
+
+@keyframes highlightGlow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+/* ============ Music Player ============ */
+.music-player {
+  width: 100%;
+  max-width: 400px;
+  background: linear-gradient(135deg, #ec4899, #f97316);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  opacity: 0;
+  transform: translateY(100px);
+  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.music-player.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.player-album-art {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1rem;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.album-gradient {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: albumPulse 3s ease-in-out infinite;
+}
+
+@keyframes albumPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.1); }
+}
+
+.album-icon {
+  font-size: 3rem;
+}
+
+.player-info {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.player-song-title {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.player-artist {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+/* Audio Visualizer */
+.player-visualizer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 40px;
+  margin-bottom: 1rem;
+}
+
+.visualizer-bar {
+  width: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 3px;
+  height: 10px;
+  transition: height 0.2s ease;
+}
+
+.visualizer-bar.playing {
+  animation: visualize 0.8s ease-in-out infinite alternate;
+  animation-delay: var(--delay);
+}
+
+@keyframes visualize {
+  0% { height: 8px; }
+  100% { height: 35px; }
+}
+
+/* Player Controls */
+.player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.control-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.control-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: white;
+}
+
+.control-btn.skip {
+  width: 40px;
+  height: 40px;
+}
+
+.control-btn.play-pause {
+  width: 56px;
+  height: 56px;
+  background: white;
+}
+
+.control-btn.play-pause svg {
+  width: 28px;
+  height: 28px;
+  fill: #ec4899;
+}
+
+/* Progress Bar */
+.player-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.time-current,
+.time-total {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 35px;
+}
+
+.time-current {
+  text-align: right;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ============ CTA Button ============ */
+.cta-container {
+  width: 100%;
+  text-align: center;
+  margin-top: 2rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease-out 0.3s;
+}
+
+.cta-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 
+    0 10px 30px rgba(139, 92, 246, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 15px 40px rgba(139, 92, 246, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.cta-icon {
+  font-size: 1.25rem;
+}
+
+.cta-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+/* ============ Footer ============ */
+.share-footer {
+  position: fixed;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.75rem;
+}
+
+/* ============ Responsive Design ============ */
+@media (max-width: 480px) {
+  .share-page {
+    padding: 1.5rem 1rem;
+  }
+  
+  .envelope {
+    width: 240px;
+    height: 170px;
+  }
+  
+  .envelope-wax-seal {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .seal-heart {
+    inset: 10px;
+    font-size: 1.2rem;
+  }
+  
+  .letter {
+    padding: 1.5rem;
+  }
+  
+  .letter-title {
+    font-size: 1.5rem;
+  }
+  
+  .music-player {
+    padding: 1.25rem;
+  }
+  
+  .player-album-art {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .cta-button {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* ============ Reduced Motion ============ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .particle {
+    display: none;
+  }
+}
