@@ -98,7 +98,7 @@ export default async function handler(req, res) {
         model: 'suno-v5-beta',
         custom_mode: true,
         prompt: lyrics,
-        tags: sunoStyle,
+        style: sunoStyle,
         title: `A Song for ${recipientName}`,
         vocal_gender: vocalGender,
         negative_tags: 'Heavy Metal, Screaming, Harsh vocals, Distorted guitars',
