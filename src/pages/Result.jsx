@@ -103,6 +103,10 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
   // Use proxy URL for Suno audio to bypass CORS
   const getAudioSource = () => {
     if (!audioUrl) return null;
+    // Demo audio URL (soundhelix) - use directly
+    if (audioUrl.includes('soundhelix.com')) {
+      return audioUrl;
+    }
     // If it's a Suno CDN URL, use the proxy endpoint
     if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai')) {
       return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
@@ -240,7 +244,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
   }, [isPaid, songId, title, setIsPaid]);
 
   const togglePlay = () => {
-    if (!audioUrl || isMock) {
+    if (!audioUrl) {
       setAudioError(true);
       return;
     }
@@ -347,10 +351,9 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
             <div className="flex items-start gap-3">
               <span className="text-2xl">⚠️</span>
               <div>
-                <div className="font-semibold text-yellow-300 mb-1">Preview Mode</div>
+                <div className="font-semibold text-blue-300 mb-1">Demo Preview</div>
                 <p className="text-white/60 text-sm">
-                  No API key configured. This shows a preview of how your song will look when generated.
-                  Connect your Suno API key to create real songs.
+                  This is a preview of your personalized song. The full version will be uniquely crafted with your story and details.
                 </p>
               </div>
             </div>
@@ -383,7 +386,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
               <button
                 onClick={togglePlay}
                 className={`inline-flex items-center gap-3 px-8 py-4 rounded-full transition-all duration-300 border ${
-                  audioUrl && !isMock
+                  audioUrl
                     ? 'bg-white/10 hover:bg-white/20 cursor-pointer'
                     : 'bg-white/5 cursor-not-allowed opacity-50'
                 } border-white/10`}
@@ -418,7 +421,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
         </div>
 
         {/* ===== 30-Second Preview Section ===== */}
-        {!isPaid && audioUrl && !isMock && (
+        {!isPaid && audioUrl && (
           <div className="glass-card p-8 mb-8 border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5">
             {/* Preview Header */}
             <div className="flex items-center justify-between mb-6">

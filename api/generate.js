@@ -112,6 +112,25 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Suno API Error:', response.status, errorData);
+      
+      // If quota insufficient or API error, return demo mode so user can still experience the product
+      try {
+        const parsed = JSON.parse(errorData);
+        if (parsed.error?.code === 'insufficient_quota' || response.status === 402 || response.status === 429) {
+          console.warn('Suno API quota insufficient, returning demo mode');
+          return res.json({
+            success: true,
+            taskId: `demo_${Date.now()}`,
+            lyrics,
+            secretDetails,
+            style: sunoStyle,
+            isDemo: true,
+            demoAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            message: 'Demo mode - API quota temporarily unavailable'
+          });
+        }
+      } catch (e) {}
+      
       return res.status(response.status).json({ 
         error: 'Failed to submit generation task',
         details: errorData

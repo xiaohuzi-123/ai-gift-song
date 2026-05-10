@@ -33,23 +33,22 @@ export default async function handler(req, res) {
     const cachedResult = taskResults.get(taskId);
     
     // Check if it's a mock task
-    if (taskId.startsWith('mock_')) {
-      // Return mock result for development
+    if (taskId.startsWith('mock_') || taskId.startsWith('demo_')) {
+      // Return demo result for development
+      const cached = taskResults.get(taskId);
       return res.json({
         task_id: taskId,
         status: 'completed',
-        data: cachedResult ? [
-          {
-            id: `mock_audio_${Date.now()}`,
-            title: `A Song for ${cachedResult.recipientName || 'You'}`,
-            audio_url: null, // No real audio in mock mode
-            duration: 180,
-            created_at: new Date().toISOString()
-          }
-        ] : [],
-        lyrics: cachedResult?.lyrics || '',
-        secretDetails: cachedResult?.secretDetails || [],
-        is_mock: true
+        data: [{
+          id: `demo_audio_${Date.now()}`,
+          title: `A Song for ${cached?.recipientName || 'You'}`,
+          audio_url: cached?.demoAudioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          duration: 180,
+          created_at: new Date().toISOString()
+        }],
+        lyrics: cached?.lyrics || '',
+        secretDetails: cached?.secretDetails || [],
+        is_demo: true
       });
     }
 

@@ -122,22 +122,24 @@ function Generating({ onComplete, formData, onResult }) {
       
       setTaskId(data.taskId);
       
-      // Start polling for results
-      if (!data.mock) {
-        pollForResults(data.taskId);
-      } else {
-        // Mock mode - simulate completion
+      // Demo mode - skip to result with demo audio
+      if (data.isDemo || data.mock) {
         setTimeout(() => {
           setStage('complete');
           setProgress(100);
           onResult({
             ...data,
-            audioUrl: null, // No real audio in mock mode
-            isMock: true
+            audioUrl: data.demoAudioUrl || null,
+            isMock: true,
+            isDemo: data.isDemo || false
           });
           setTimeout(onComplete, 1000);
         }, 3000);
+        return;
       }
+      
+      // Start polling for results
+      pollForResults(data.taskId);
       
     } catch (err) {
       console.error('Generation error:', err);
