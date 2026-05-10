@@ -43,7 +43,7 @@ function generateDownloadUrl(songId, orderId) {
 // Helper function to get PayPal access token
 async function getAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID || 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
-  const clientSecret = process.env.PAYPAL_SECRET || 'demo-secret';
+  const clientSecret = process.env.PAYPAL_SECRET || 'EC2msuov9Ejs3tzruofc1AcIVQQGPgXhHm-Fwv73OkWK7ofwSom9A6gUjiPDr0grHgIqM2J-Xj23mY2x';
   const baseUrl = process.env.USE_SANDBOX === 'true' ? SANDBOX_API : LIVE_API;
   
   if (!clientId || !clientSecret) {
