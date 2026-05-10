@@ -35,7 +35,8 @@ const quickStoryTags = [
 ];
 
 function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
-  const selectedEmotion = formData.emotion || '';
+  const [localEmotion, setLocalEmotion] = useState(formData.emotion || '');
+  const selectedEmotion = localEmotion || formData.emotion || '';
   const activeHoliday = useMemo(() => getActiveHoliday(), []);
   const countdown = useMemo(() => getHolidayCountdown(activeHoliday), [activeHoliday]);
   
@@ -50,6 +51,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
   const [formStep, setFormStep] = useState(0);
 
   const handleEmotionClick = (emotionId) => {
+    setLocalEmotion(emotionId);
     onEmotionSelect(emotionId);
   };
 
