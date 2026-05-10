@@ -200,7 +200,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           <div className="space-y-4">
             {[
               { q: 'Is the song really unique?', a: 'Yes! Every song is AI-generated based on YOUR specific story and details. No two songs are alike.' },
-              { q: 'How long does it take?', a: 'Most songs are ready in 3-5 minutes. You'll get an email when your song is ready.' },
+              { q: 'How long does it take?', a: "Most songs are ready in 3-5 minutes. You'll get an email when your song is ready." },
               { q: 'Can I download and share the song?', a: 'Absolutely! You get a permanent link to share and can download the MP3 file.' },
               { q: 'What if I don\'t like it?', a: 'We offer a satisfaction guarantee. Contact us within 7 days if you need adjustments.' },
               { q: 'Is my story kept private?', a: 'Yes! Your story is only used to create your song and is never shared.' },
