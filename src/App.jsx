@@ -18,6 +18,7 @@ function App() {
     songStyle: ''
   });
   const [resultData, setResultData] = useState(null);
+  const [isPaid, setIsPaid] = useState(false); // Payment state for 30s preview unlock
 
   const handleStartCreation = () => {
     const element = document.getElementById('emotions-section');
@@ -56,6 +57,7 @@ function App() {
   const handleRestart = () => {
     setStep('landing');
     setResultData(null);
+    setIsPaid(false); // Reset payment state on restart
     setFormData({
       emotion: '',
       recipientName: '',
@@ -93,6 +95,8 @@ function App() {
           resultData={resultData}
           onShare={handleShare}
           onRestart={handleRestart}
+          isPaid={isPaid}
+          setIsPaid={setIsPaid}
         />
       )}
       {step === 'share' && (
@@ -100,6 +104,8 @@ function App() {
           formData={formData}
           resultData={resultData}
           onRestart={handleRestart}
+          isPaid={isPaid}
+          setIsPaid={setIsPaid}
         />
       )}
     </div>

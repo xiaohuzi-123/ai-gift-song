@@ -1,11 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import './SharePage.css';
 
-function SharePage({ formData, onRestart }) {
+// PayPal Client ID - Replace with your actual PayPal Business Client ID
+const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID'; // Replace this!
+
+const PREVIEW_DURATION = 30;
+const FULL_PRICE = 4.99;
+
+function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
   const [phase, setPhase] = useState('envelope'); // envelope -> opening -> letter -> player
   const [showPlayer, setShowPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const audioRef = useRef(null);
+  const paypalContainerRef = useRef(null);
+
+  const { audioUrl, title, duration, songId } = resultData || {};
   
   // Phase transition sequence
   useEffect(() => {
@@ -26,7 +39,7 @@ function SharePage({ formData, onRestart }) {
 
   // Auto play music when player shows
   useEffect(() => {
-    if (showPlayer && audioRef.current) {
+    if (showPlayer && audioRef.current && audioUrl) {
       setTimeout(() => {
         audioRef.current?.play().then(() => {
           setIsPlaying(true);
@@ -35,7 +48,114 @@ function SharePage({ formData, onRestart }) {
         });
       }, 500);
     }
-  }, [showPlayer]);
+  }, [showPlayer, audioUrl]);
+
+  // Time update handler for 30-second preview limit
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => {
+      const current = audio.currentTime;
+      setCurrentTime(current);
+      
+      // Enforce 30-second preview limit for non-paid users
+      if (!isPaid && current >= PREVIEW_DURATION) {
+        audio.pause();
+        setIsPlaying(false);
+        setShowUpgradePrompt(true);
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [isPaid]);
+
+  // Initialize PayPal button
+  useEffect(() => {
+    if (isPaid || !paypalContainerRef.current) return;
+    
+    if (window.paypal && paypalContainerRef.current && !paypalContainerRef.current.hasChildNodes()) {
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'gold',
+          shape: 'rect',
+          label: 'paypal'
+        },
+        createOrder: async (data, actions) => {
+          try {
+            setIsProcessingPayment(true);
+            setPaymentError('');
+            
+            const response = await fetch('/api/create-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                amount: FULL_PRICE,
+                songId: songId || 'shared-song',
+                songTitle: title || 'AI Gift Song'
+              }),
+            });
+            
+            if (!response.ok) throw new Error('Failed to create order');
+            const orderData = await response.json();
+            return orderData.orderId;
+          } catch (error) {
+            console.error('Order creation error:', error);
+            setPaymentError('Failed to create order. Please try again.');
+            throw error;
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        onApprove: async (data, actions) => {
+          try {
+            const response = await fetch('/api/capture-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orderId: data.orderID,
+                songId: songId || 'shared-song'
+              }),
+            });
+            
+            const captureData = await response.json();
+            
+            if (captureData.success) {
+              setIsPaid(true);
+              setShowUpgradePrompt(false);
+              
+              if (captureData.downloadUrl) {
+                const link = document.createElement('a');
+                link.href = captureData.downloadUrl;
+                link.download = `${title || 'gift-song'}.mp3`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            } else {
+              setPaymentError(captureData.message || 'Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment capture error:', error);
+            setPaymentError('Payment verification failed. Please contact support.');
+          }
+        },
+        onError: (error) => {
+          console.error('PayPal error:', error);
+          setPaymentError('Payment failed. Please try again.');
+        },
+        onCancel: () => {
+          console.log('Payment cancelled');
+        }
+      }).render(paypalContainerRef.current);
+    }
+  }, [isPaid, songId, title, setIsPaid]);
 
   const handleEnvelopeClick = () => {
     if (phase === 'envelope') {
@@ -44,14 +164,26 @@ function SharePage({ formData, onRestart }) {
   };
 
   const togglePlay = () => {
-    if (audioRef.current) {
+    if (audioRef.current && audioUrl) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
+        if (showUpgradePrompt) {
+          audioRef.current.currentTime = 0;
+          setCurrentTime(0);
+          setShowUpgradePrompt(false);
+        }
         audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
     }
+  };
+
+  // Format time display
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Highlight personal details in lyrics
@@ -257,15 +389,75 @@ You're safe in my arms, perfectly warm`;
             </div>
             
             <div className="player-progress">
-              <span className="time-current">0:00</span>
+              <span className="time-current">{formatTime(currentTime)}</span>
               <div className="progress-bar">
-                <div className="progress-fill" style={{ width: '35%' }} />
+                <div 
+                  className={`progress-fill ${!isPaid ? 'preview' : 'full'}`} 
+                  style={{ width: `${Math.min((currentTime / (duration || 180)) * 100, 100)}%` }} 
+                />
+                {/* Preview marker */}
+                {!isPaid && (
+                  <div 
+                    className="preview-marker"
+                    style={{ left: `${(PREVIEW_DURATION / (duration || 180)) * 100}%` }}
+                  />
+                )}
               </div>
-              <span className="time-total">3:24</span>
+              <span className="time-total">{formatTime(isPaid ? (duration || 180) : PREVIEW_DURATION)}</span>
             </div>
             
             {/* Hidden audio element */}
-            <audio ref={audioRef} src="/placeholder-audio.mp3" />
+            <audio 
+              ref={audioRef} 
+              src={audioUrl || "/placeholder-audio.mp3"} 
+              onEnded={() => {
+                setIsPlaying(false);
+                if (!isPaid) setShowUpgradePrompt(true);
+              }}
+            />
+
+            {/* ===== Upgrade Prompt for Shared Users ===== */}
+            {showUpgradePrompt && (
+              <div className="upgrade-prompt">
+                <div className="upgrade-content">
+                  <div className="upgrade-icon">💝</div>
+                  <h3 className="upgrade-title">Love this song?</h3>
+                  <p className="upgrade-subtitle">
+                    Unlock the full version for just <span className="price">${FULL_PRICE}</span>
+                  </p>
+                  
+                  <div className="upgrade-comparison">
+                    <span className="strike">$179</span>
+                    <span className="special">AI Gift Song: ${FULL_PRICE}</span>
+                  </div>
+
+                  {paymentError && (
+                    <div className="payment-error">{paymentError}</div>
+                  )}
+
+                  <div ref={paypalContainerRef} className="paypal-container">
+                    {isProcessingPayment && (
+                      <div className="processing">
+                        <span className="spinner"></span>
+                        Processing...
+                      </div>
+                    )}
+                  </div>
+                  
+                  {!window.paypal && (
+                    <p className="sdk-loading">Loading payment options...</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ===== Full Version Unlocked ===== */}
+            {isPaid && (
+              <div className="unlocked-badge">
+                <span className="check">✓</span>
+                Full Version
+              </div>
+            )}
           </div>
         )}
 

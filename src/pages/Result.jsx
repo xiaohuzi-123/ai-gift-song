@@ -22,12 +22,24 @@ const defaultSecrets = [
   { text: "The inside joke from your details", label: "Inside Joke" }
 ];
 
-function Result({ formData, resultData, onShare, onRestart }) {
+// PayPal Client ID - Replace with your actual PayPal Business Client ID
+// For testing, use sandbox client ID: https://developer.paypal.com/docs/subscriptions/integration/test/
+const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID'; // Replace this!
+
+const PREVIEW_DURATION = 30; // 30 seconds preview
+const FULL_PRICE = 4.99;
+
+function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid }) {
   const [currentLine, setCurrentLine] = useState(0);
   const [showSecrets, setShowSecrets] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [audioError, setAudioError] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const audioRef = useRef(null);
+  const paypalContainerRef = useRef(null);
   
   // Get data from form or result
   const { emotion, recipientName, nickname, yourName, occasion, voiceType, songStyle } = formData || {};
@@ -38,7 +50,8 @@ function Result({ formData, resultData, onShare, onRestart }) {
     lyrics, 
     secretDetails, 
     duration,
-    isMock 
+    isMock,
+    songId
   } = resultData || {};
   
   // Parse lyrics for display
@@ -55,6 +68,19 @@ function Result({ formData, resultData, onShare, onRestart }) {
   const chorusLines = lyricsLines.filter(line => 
     line.includes('[') || line.length < 50
   ).slice(0, 15);
+
+  // Format time display
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Calculate progress percentage
+  const getProgressPercent = () => {
+    const maxTime = isPaid ? (duration || 180) : PREVIEW_DURATION;
+    return Math.min((currentTime / maxTime) * 100, 100);
+  };
 
   useEffect(() => {
     // Lyrics typewriter effect
@@ -74,7 +100,7 @@ function Result({ formData, resultData, onShare, onRestart }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle audio playback
+  // Handle audio playback with 30-second limit
   useEffect(() => {
     if (audioUrl && audioRef.current) {
       audioRef.current.src = audioUrl;
@@ -87,9 +113,123 @@ function Result({ formData, resultData, onShare, onRestart }) {
     }
   }, [audioUrl, isPlaying]);
 
+  // Time update handler for 30-second preview limit
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => {
+      const current = audio.currentTime;
+      setCurrentTime(current);
+      
+      // Enforce 30-second preview limit for non-paid users
+      if (!isPaid && current >= PREVIEW_DURATION) {
+        audio.pause();
+        setIsPlaying(false);
+        setShowUpgradePrompt(true);
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [isPaid]);
+
+  // Initialize PayPal button
+  useEffect(() => {
+    if (isPaid || !paypalContainerRef.current) return;
+    
+    // Check if PayPal SDK is loaded
+    if (window.paypal && paypalContainerRef.current && !paypalContainerRef.current.hasChildNodes()) {
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'gold',
+          shape: 'rect',
+          label: 'paypal'
+        },
+        createOrder: async (data, actions) => {
+          try {
+            setIsProcessingPayment(true);
+            setPaymentError('');
+            
+            // Call backend to create PayPal order
+            const response = await fetch('/api/create-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                amount: FULL_PRICE,
+                songId: songId || 'default-song',
+                songTitle: title || 'AI Gift Song'
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to create order');
+            }
+            
+            const orderData = await response.json();
+            return orderData.orderId;
+          } catch (error) {
+            console.error('Order creation error:', error);
+            setPaymentError('Failed to create order. Please try again.');
+            throw error;
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        onApprove: async (data, actions) => {
+          try {
+            // Capture the payment
+            const response = await fetch('/api/capture-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orderId: data.orderID,
+                songId: songId || 'default-song'
+              }),
+            });
+            
+            const captureData = await response.json();
+            
+            if (captureData.success) {
+              setIsPaid(true);
+              setShowUpgradePrompt(false);
+              
+              // Provide download link
+              if (captureData.downloadUrl) {
+                // Trigger download
+                const link = document.createElement('a');
+                link.href = captureData.downloadUrl;
+                link.download = `${title || 'gift-song'}.mp3`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            } else {
+              setPaymentError(captureData.message || 'Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment capture error:', error);
+            setPaymentError('Payment verification failed. Please contact support.');
+          }
+        },
+        onError: (error) => {
+          console.error('PayPal error:', error);
+          setPaymentError('Payment failed. Please try again.');
+        },
+        onCancel: () => {
+          console.log('Payment cancelled');
+        }
+      }).render(paypalContainerRef.current);
+    }
+  }, [isPaid, songId, title, setIsPaid]);
+
   const togglePlay = () => {
     if (!audioUrl || isMock) {
-      // Show message that audio isn't available
       setAudioError(true);
       return;
     }
@@ -98,6 +238,12 @@ function Result({ formData, resultData, onShare, onRestart }) {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
+        // If resuming from upgrade prompt, start from 0
+        if (showUpgradePrompt) {
+          audioRef.current.currentTime = 0;
+          setCurrentTime(0);
+          setShowUpgradePrompt(false);
+        }
         audioRef.current.play().catch(err => {
           console.error('Audio play error:', err);
           setAudioError(true);
@@ -144,7 +290,10 @@ function Result({ formData, resultData, onShare, onRestart }) {
       {/* Hidden audio element */}
       <audio 
         ref={audioRef} 
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false);
+          if (!isPaid) setShowUpgradePrompt(true);
+        }}
         onError={() => setAudioError(true)}
       />
       
@@ -251,6 +400,155 @@ function Result({ formData, resultData, onShare, onRestart }) {
             </div>
           </div>
         </div>
+
+        {/* ===== 30-Second Preview Section ===== */}
+        {!isPaid && audioUrl && !isMock && (
+          <div className="glass-card p-8 mb-8 border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5">
+            {/* Preview Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 flex items-center justify-center">
+                  <span className="text-lg">🎧</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-white">Free Preview</div>
+                  <div className="text-white/50 text-sm">30 seconds included</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">${FULL_PRICE}</div>
+                <div className="text-white/50 text-xs">Full Song</div>
+              </div>
+            </div>
+
+            {/* Progress Bar with 30s marker */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm text-white/60 mb-2">
+                <span>{formatTime(currentTime)} / {isPaid ? formatTime(duration || 180) : formatTime(PREVIEW_DURATION)}</span>
+                <span className={!isPaid ? 'text-pink-400' : 'text-green-400'}>
+                  {isPaid ? 'Full Version' : 'Preview'}
+                </span>
+              </div>
+              
+              <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+                {/* Progress fill */}
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-100"
+                  style={{ width: `${getProgressPercent()}%` }}
+                />
+                {/* 30-second marker */}
+                {!isPaid && (
+                  <div 
+                    className="absolute top-0 h-full w-0.5 bg-yellow-400 z-10"
+                    style={{ left: `${(PREVIEW_DURATION / (duration || 180)) * 100}%` }}
+                  />
+                )}
+              </div>
+              
+              <div className="flex justify-between text-xs text-white/40 mt-1">
+                <span>0:00</span>
+                <span className="text-yellow-400/60">{formatTime(PREVIEW_DURATION)} Preview End</span>
+                <span>{formatTime(duration || 180)}</span>
+              </div>
+            </div>
+
+            {/* Upgrade Prompt - shown after 30 seconds */}
+            {showUpgradePrompt && (
+              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-2xl p-6 border border-pink-500/30 animate-fade-in-up">
+                <div className="text-center">
+                  <div className="text-4xl mb-3">💝</div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    Love this song?
+                  </h3>
+                  <p className="text-white/70 mb-4">
+                    Unlock the full version for just <span className="text-pink-400 font-bold">${FULL_PRICE}</span>
+                  </p>
+                  
+                  {/* Price comparison */}
+                  <div className="bg-white/5 rounded-lg px-4 py-2 mb-6 inline-block">
+                    <p className="text-white/60 text-sm">
+                      Others charge <span className="line-through text-white/40">$179</span>
+                      <span className="text-green-400 font-bold ml-2">We're just ${FULL_PRICE}</span>
+                    </p>
+                  </div>
+
+                  {/* Payment Error */}
+                  {paymentError && (
+                    <div className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">
+                      {paymentError}
+                    </div>
+                  )}
+
+                  {/* PayPal Button Container */}
+                  <div ref={paypalContainerRef} className="max-w-xs mx-auto">
+                    {isProcessingPayment && (
+                      <div className="text-center py-4">
+                        <div className="inline-block w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        <span className="text-white/70">Processing...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manual PayPal SDK check */}
+                  {!window.paypal && (
+                    <p className="text-yellow-400/60 text-xs mt-2">
+                      PayPal SDK loading... If this persists, please configure your PayPal Client ID.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== Paid User Full Download Section ===== */}
+        {isPaid && (
+          <div className="glass-card p-8 mb-8 border border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                  <span className="text-xl">✅</span>
+                </div>
+                <div>
+                  <div className="font-semibold text-white text-lg">Full Version Unlocked!</div>
+                  <div className="text-white/50 text-sm">Thank you for supporting AI Gift Song</div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  // Trigger download from stored download URL or regenerate
+                  const link = document.createElement('a');
+                  link.href = audioUrl;
+                  link.download = `${title || 'gift-song'}.mp3`;
+                  link.target = '_blank';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:opacity-90 transition-opacity"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Full MP3
+              </button>
+            </div>
+            
+            {/* Full progress bar */}
+            <div className="mt-6">
+              <div className="flex justify-between text-sm text-white/60 mb-2">
+                <span>{formatTime(currentTime)} / {formatTime(duration || 180)}</span>
+                <span className="text-green-400">Full Version Playing</span>
+              </div>
+              <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-100"
+                  style={{ width: `${(currentTime / (duration || 180)) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Lyrics */}
         <div className="glass-card p-8 md:p-12 mb-12">

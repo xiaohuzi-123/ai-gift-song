@@ -11,6 +11,59 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 
+      ============================================
+      PAYPAL SDK CONFIGURATION
+      ============================================
+      
+      IMPORTANT: Replace 'YOUR_PAYPAL_CLIENT_ID' with your actual PayPal Business Client ID!
+      
+      For testing (Sandbox mode):
+      1. Go to https://developer.paypal.com/
+      2. Create a developer account
+      3. Go to Dashboard > My Apps & Credentials
+      4. Create a new app or use the default sandbox app
+      5. Copy the Client ID
+      
+      For production (Live mode):
+      1. Create a PayPal Business account at paypal.com
+      2. Go to Developer Dashboard > My Apps & Credentials
+      3. Create a live app
+      4. Copy the Client ID
+      
+      IMPORTANT: Remove the sandbox suffix (-sandbox) for production!
+      
+      The SDK is loaded with currency USD for song purchases at $4.99
+    -->
+    <!-- PayPal Sandbox SDK (for testing) -->
+    <!-- <script src="https://www.paypal.com/sdk/js?client-id=YOUR_SANDBOX_CLIENT_ID&currency=USD" data-sdk-integration-source="button-factory"></script> -->
+    
+    <!-- PayPal Live SDK (for production - UNCOMMENT AND CONFIGURE) -->
+    <!-- <script src="https://www.paypal.com/sdk/js?client-id=YOUR_LIVE_CLIENT_ID&currency=USD" data-sdk-integration-source="button-factory"></script> -->
+    
+    <!-- Dynamic SDK loader that checks for PayPal credentials -->
+    <script>
+      // Check if we're in production or development
+      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+      
+      // PayPal Client ID - Set via environment variable or replace directly
+      // For Vercel: Set in Project Settings > Environment Variables
+      // For local: Add to .env file
+      const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID'; // Replace this with your actual Client ID
+      
+      // Only load if configured
+      if (PAYPAL_CLIENT_ID !== 'YOUR_PAYPAL_CLIENT_ID') {
+        const script = document.createElement('script');
+        script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&intent=capture`;
+        script.setAttribute('data-sdk-integration-source', 'button-factory');
+        script.async = true;
+        document.head.appendChild(script);
+        console.log('PayPal SDK loaded');
+      } else {
+        console.log('PayPal SDK not loaded - configure PAYPAL_CLIENT_ID to enable payments');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
