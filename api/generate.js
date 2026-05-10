@@ -102,8 +102,8 @@ export default async function handler(req, res) {
         title: `A Song for ${recipientName}`,
         vocal_gender: vocalGender,
         negative_tags: 'Heavy Metal, Screaming, Harsh vocals, Distorted guitars',
-        style_weight: 0.65,
-        weirdness: 0.5,
+        style_weight: 0.55 + Math.random() * 0.25,
+        weirdness: 0.3 + Math.random() * 0.4,
         callback_url: callbackUrl,
         wait_audio: false // We'll poll for results
       })
