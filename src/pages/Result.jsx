@@ -24,7 +24,7 @@ const defaultSecrets = [
 
 // PayPal Client ID - Replace with your actual PayPal Business Client ID
 // For testing, use sandbox client ID: https://developer.paypal.com/docs/subscriptions/integration/test/
-const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID'; // Replace this!
+const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
 
 const PREVIEW_DURATION = 30; // 30 seconds preview
 const FULL_PRICE = 4.99;
