@@ -35,7 +35,7 @@ const quickStoryTags = [
 ];
 
 function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
-  const [selectedEmotion, setSelectedEmotion] = useState(formData.emotion);
+  const selectedEmotion = formData.emotion || '';
   const activeHoliday = useMemo(() => getActiveHoliday(), []);
   const countdown = useMemo(() => getHolidayCountdown(activeHoliday), [activeHoliday]);
   
@@ -49,9 +49,8 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
   });
   const [formStep, setFormStep] = useState(0);
 
-  const handleEmotionClick = (emotion) => {
-    setSelectedEmotion(emotion.id);
-    onEmotionSelect(emotion.id);
+  const handleEmotionClick = (emotionId) => {
+    onEmotionSelect(emotionId);
   };
 
   const handleFormChange = (field, value) => {
@@ -64,12 +63,19 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
     handleFormChange('story', newText);
   };
 
+  const goToStep2 = () => {
+    setFormStep(1);
+  };
+
+  const goBackToStep1 = () => {
+    setFormStep(0);
+  };
+
   const handleSubmit = () => {
     onFormSubmit({ ...formValues, emotion: selectedEmotion });
   };
 
-  const isStep1Valid = () => selectedEmotion && formValues.recipientName.trim() && formValues.yourName.trim();
-  const isStep2Valid = () => formValues.voiceType && formValues.songStyle;
+  const isStep1Valid = selectedEmotion && formValues.recipientName.trim() && formValues.yourName.trim();
 
   return (
     <div className="relative">
@@ -93,6 +99,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           <h1 className="text-[clamp(3rem,10vw,8rem)] font-black tracking-tight leading-[0.9] gradient-text-hero">
             {activeHoliday.title}
           </h1>
+          
           <p className="text-xl md:text-3xl text-white/80 font-light mt-8 max-w-2xl mx-auto leading-relaxed">
             {activeHoliday.subtitle}
           </p>
@@ -144,7 +151,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-2xl font-bold">3</div>
               <h3 className="text-xl font-bold mb-2">Gift & Delight</h3>
-              <p className="text-white/60">Share the link or download. They'll love this personal gift!</p>
+              <p className="text-white/60">Share the link or download. They will love this personal gift!</p>
             </div>
           </div>
         </div>
@@ -156,73 +163,52 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Loved by Thousands</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="glass-card p-6">
-              <div className="flex gap-1 text-yellow-400 mb-3">★★★★★</div>
-              <p className="text-white/80 mb-4">"My wife's eyes welled up when she heard the song. It captured our 10 years together perfectly."</p>
-              <p className="text-white/40 text-sm">— Michael R., Chicago</p>
+              <div className="text-yellow-400 mb-3">★★★★★</div>
+              <p className="text-white/80 mb-4">"My mom cried when she heard her song. It had details only we would know. Absolutely magical."</p>
+              <p className="text-white/40 text-sm">— Sarah M., Birthday Gift</p>
             </div>
             <div className="glass-card p-6">
-              <div className="flex gap-1 text-yellow-400 mb-3">★★★★★</div>
-              <p className="text-white/80 mb-4">"Used it for my dad's birthday. He's been showing it to everyone! Worth every penny."</p>
-              <p className="text-white/40 text-sm">— Sarah L., Austin</p>
+              <div className="text-yellow-400 mb-3">★★★★★</div>
+              <p className="text-white/80 mb-4">"Better than any card or flowers. The song was so personal and touching. Best gift ever!"</p>
+              <p className="text-white/40 text-sm">— David K., Anniversary Gift</p>
             </div>
             <div className="glass-card p-6">
-              <div className="flex gap-1 text-yellow-400 mb-3">★★★★★</div>
-              <p className="text-white/80 mb-4">"The duet option is amazing. Sounded like a real professional recording!"</p>
-              <p className="text-white/40 text-sm">— James T., Seattle</p>
+              <div className="text-yellow-400 mb-3">★★★★★</div>
+              <p className="text-white/80 mb-4">"I sent it to my best friend and she played it on repeat all day. The duet version is amazing!"</p>
+              <p className="text-white/40 text-sm">— Emily R., Friendship Gift</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Price Comparison */}
-      <section className="py-16 px-6 bg-[#0a0a1a]">
+      <section className="py-20 px-6 bg-[#0a0a1a]">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6">Why Choose Us?</h2>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="glass-card p-6 border border-red-500/30 opacity-75">
-              <p className="text-red-400 font-semibold mb-2">Others</p>
-              <p className="text-4xl font-bold mb-2">$179</p>
-              <p className="text-white/50 text-sm">Traditional gift song services</p>
+          <h2 className="text-3xl md:text-4xl font-bold mb-12">Why Pay More?</h2>
+          <div className="flex flex-col md:flex-row gap-6 justify-center">
+            <div className="glass-card p-6 border border-red-500/30 opacity-75 flex-1">
+              <p className="text-white/40 text-sm mb-2">Traditional Song Services</p>
+              <p className="text-4xl font-bold text-white/50">$179</p>
+              <p className="text-white/30 text-sm mt-2">7-day wait • Limited styles</p>
             </div>
-            <div className="glass-card p-6 border border-green-500/50">
-              <p className="text-green-400 font-semibold mb-2">AI Gift Song</p>
+            <div className="glass-card p-6 border border-green-500/50 flex-1">
+              <p className="text-green-400 text-sm mb-2 font-semibold">AI Gift Song</p>
               <p className="text-4xl font-bold gradient-text">$4.99</p>
-              <p className="text-white/50 text-sm">AI-powered, instant delivery</p>
+              <p className="text-white/60 text-sm mt-2">3-5 min • 90+ styles • Instant delivery</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-20 px-6 bg-gradient-to-b from-[#0a0a1a] to-[#0f0f2a]">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">FAQ</h2>
-          <div className="space-y-4">
-            {[
-              { q: 'Is the song really unique?', a: 'Yes! Every song is AI-generated based on YOUR specific story and details. No two songs are alike.' },
-              { q: 'How long does it take?', a: "Most songs are ready in 3-5 minutes. You'll get an email when your song is ready." },
-              { q: 'Can I download and share the song?', a: 'Absolutely! You get a permanent link to share and can download the MP3 file.' },
-              { q: 'What if I don\'t like it?', a: 'We offer a satisfaction guarantee. Contact us within 7 days if you need adjustments.' },
-              { q: 'Is my story kept private?', a: 'Yes! Your story is only used to create your song and is never shared.' },
-            ].map((item, idx) => (
-              <div key={idx} className="glass-card p-6">
-                <h3 className="font-semibold text-lg mb-2">{item.q}</h3>
-                <p className="text-white/60">{item.a}</p>
-              </div>
-            ))}
+      {/* Creation Form */}
+      <section id="emotions-section" className="py-20 px-6 bg-gradient-to-b from-[#0a0a1a] to-[#0f0f2a]">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Create Your Song</h2>
+            <p className="text-white/50">A song only they understand — in 2 simple steps</p>
           </div>
-        </div>
-      </section>
 
-      {/* Creation Form Section - 2 Steps */}
-      <section id="creation-section" className="min-h-screen py-16 px-6 relative bg-[#0a0a1a]">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-pink-900/10 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]" />
-        </div>
-        
-        <div className="max-w-2xl mx-auto relative">
-          {/* Progress indicator */}
+          {/* Step indicator */}
           <div className="flex justify-center gap-4 mb-10">
             <div className={`flex items-center gap-2 ${formStep >= 0 ? 'text-pink-400' : 'text-white/30'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -241,9 +227,9 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           
           <div className="glass-card p-6 md:p-8">
             
-            {/* Step 0: Emotion + Names */}
+            {/* ============ STEP 1: Emotion + Names + Story ============ */}
             {formStep === 0 && (
-              <div className="space-y-6 animate-fade-in-up">
+              <div className="space-y-6">
                 {/* Emotion Selection */}
                 <div>
                   <label className="block text-sm font-medium text-white/60 mb-3 text-center">Choose the vibe</label>
@@ -251,7 +237,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                     {emotions.map((emotion) => (
                       <button
                         key={emotion.id}
-                        onClick={() => handleEmotionClick(emotion)}
+                        onClick={() => handleEmotionClick(emotion.id)}
                         className={`p-3 rounded-xl transition-all duration-300 text-center ${
                           selectedEmotion === emotion.id
                             ? 'bg-gradient-to-br ' + emotion.gradient + ' shadow-lg scale-105'
@@ -339,21 +325,21 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                 </div>
 
                 <button
-                  onClick={() => setFormStep(1)}
-                  disabled={!isStep1Valid()}
-                  className={`w-full btn-cta ${!isStep1Valid() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={goToStep2}
+                  disabled={!isStep1Valid}
+                  className={`w-full btn-cta ${!isStep1Valid ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Continue to Style Selection →
                 </button>
               </div>
             )}
             
-            {/* Step 1: Voice + Style */}
+            {/* ============ STEP 2: Voice + Style + Submit ============ */}
             {formStep === 1 && (
-              <div className="space-y-6 animate-fade-in-up">
+              <div className="space-y-6">
                 <button
-                  onClick={() => setFormStep(0)}
-                  className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                  onClick={goBackToStep1}
+                  className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-2"
                 >
                   ← Back
                 </button>
@@ -388,9 +374,9 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                   </div>
                 </div>
 
-                {/* Song Style */}
+                {/* Song Style - always show after voice is selected */}
                 {formValues.voiceType && (
-                  <div className="animate-fade-in-up">
+                  <div>
                     <label className="block text-sm font-medium text-white/60 mb-3 text-center">Select genre</label>
                     <div className="grid grid-cols-3 gap-2">
                       {songStyles.map((style) => (
@@ -411,25 +397,37 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                   </div>
                 )}
 
-                {/* Create Button */}
-                {formValues.voiceType && formValues.songStyle && (
-                  <div className="pt-2 animate-fade-in-up">
-                    <button
-                      onClick={handleSubmit}
-                      className="w-full btn-cta"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        Create My Song ✨
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </span>
-                    </button>
-                  </div>
-                )}
+                {/* Create Button - always show, disabled until valid */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={!formValues.voiceType || !formValues.songStyle}
+                  className={`w-full btn-cta ${(!formValues.voiceType || !formValues.songStyle) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Create My Song ✨
+                </button>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 px-6 bg-[#0a0a1a]">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {[
+              { q: 'Is the song really unique?', a: 'Yes! Every song is AI-generated based on YOUR specific story and details. No two songs are alike.' },
+              { q: 'How long does it take?', a: "Most songs are ready in 3-5 minutes. You will get an email when your song is ready." },
+              { q: 'Can I download and share the song?', a: 'Absolutely! You get a permanent link to share and can download the MP3 file.' },
+              { q: 'What if I don\'t like it?', a: 'We offer a satisfaction guarantee. Contact us within 7 days if you need adjustments.' },
+              { q: 'Is my story kept private?', a: 'Yes! Your story is only used to create your song and is never shared.' },
+            ].map((item, idx) => (
+              <div key={idx} className="glass-card p-6">
+                <h3 className="font-semibold text-lg mb-2">{item.q}</h3>
+                <p className="text-white/60">{item.a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -462,7 +460,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
             </div>
           </div>
           <div className="pt-8 border-t border-white/10 text-center text-white/30 text-sm">
-            © 2024 AI Gift Song. All rights reserved.
+            &copy; 2026 AI Gift Song. All rights reserved.
           </div>
         </div>
       </footer>
