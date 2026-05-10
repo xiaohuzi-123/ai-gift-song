@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { getActiveHoliday, getHolidayCountdown } from '../utils/holidayDetector';
 
 const emotions = [
   { 
@@ -161,6 +162,11 @@ const getRecommendedVocalStyle = (emotion, voiceType) => {
 
 function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
   const [selectedEmotion, setSelectedEmotion] = useState(formData.emotion);
+  
+  // Get active holiday theme
+  const activeHoliday = useMemo(() => getActiveHoliday(), []);
+  const countdown = useMemo(() => getHolidayCountdown(activeHoliday), [activeHoliday]);
+  
   const [formValues, setFormValues] = useState({
     recipientName: formData.recipientName || '',
     yourName: formData.yourName || '',
@@ -208,28 +214,43 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
     <div className="relative">
       {/* Hero Section */}
       <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Massive gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-pink-800 to-orange-600" />
+        {/* Dynamic holiday-themed gradient background */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${activeHoliday.colors.bgGradient}`} />
         
-        {/* Animated light blobs */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-pink-500/30 rounded-full blur-[120px] animate-blob" />
+        {/* Animated light blobs with holiday accent */}
+        <div className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] ${activeHoliday.colors.glowColor} rounded-full blur-[120px] animate-blob`} />
         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-purple-500/20 rounded-full blur-[100px] animate-blob" style={{ animationDelay: '4s' }} />
         
         {/* Content */}
         <div className="relative z-10 text-center px-6">
+          {/* Holiday Badge */}
+          {activeHoliday.badge && (
+            <div className="mb-6 animate-fade-in-up">
+              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 ${activeHoliday.colors.badgeBg} ${activeHoliday.colors.badgeText} text-sm font-medium tracking-wide`}>
+                <span>{activeHoliday.emoji}</span>
+                <span>{activeHoliday.badge}</span>
+                {countdown && (
+                  <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+                    {countdown}
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
+          
           <h1 className="text-[clamp(3rem,10vw,8rem)] font-black tracking-tight leading-[0.9] gradient-text-hero">
-            AI Gift Song
+            {activeHoliday.title}
           </h1>
           <p className="text-xl md:text-3xl text-white/80 font-light mt-8 max-w-2xl mx-auto leading-relaxed">
-            A Song Only <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300 font-medium">They</span> Understand
+            {activeHoliday.subtitle}
           </p>
           <button 
             onClick={onStartCreation}
             className="mt-14 group"
           >
             <span className="btn-cta inline-flex items-center gap-3">
-              Create Your Song
+              {activeHoliday.cta}
               <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
