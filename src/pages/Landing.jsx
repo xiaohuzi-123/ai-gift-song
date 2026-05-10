@@ -204,7 +204,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
   const isFormValid = () => {
     if (formStep === 0) return formValues.recipientName.trim() && formValues.yourName.trim();
     if (formStep === 1) return formValues.occasion;
-    if (formStep === 2) return formValues.story.trim().length >= 50;
+    if (formStep === 2) return true; // Story now optional - no minimum requirement
     if (formStep === 3) return true; // Details optional
     if (formStep === 4) return formValues.voiceType && formValues.songStyle;
     return true;
@@ -416,17 +416,59 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                 <div>
                   <label className="block text-sm font-medium text-white/60 mb-3">
                     Share your story
-                    <span className="text-white/30 ml-2">(min 50 characters)</span>
+                    <span className="text-white/30 ml-2">(Optional — add details for a more personal song)</span>
                   </label>
                   <textarea
                     value={formValues.story}
                     onChange={(e) => handleFormChange('story', e.target.value)}
-                    placeholder="Remember when we... That time you... I'll never forget the moment when..."
+                    placeholder="Tell us about a special moment, memory, or what makes this person special to you..."
                     className="input-field min-h-[200px] resize-none text-lg leading-relaxed"
                     autoFocus
                   />
                   <div className="text-right text-sm text-white/30 mt-2">
                     {formValues.story.length} characters
+                  </div>
+                  
+                  {/* Quick tag buttons */}
+                  <div className="mt-4">
+                    <p className="text-xs text-white/40 mb-3">Quick options (click to add):</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleFormChange('story', formValues.story + (formValues.story ? ' ' : '') + 'Our first meeting was unforgettable.')}
+                        className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-all border border-white/10 hover:border-white/20"
+                      >
+                        🌟 Our first meeting
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormChange('story', formValues.story + (formValues.story ? ' ' : '') + 'There was this hilarious moment that still makes me laugh.'}
+                        className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-all border border-white/10 hover:border-white/20"
+                      >
+                        😂 A funny moment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormChange('story', formValues.story + (formValues.story ? ' ' : '') + 'Your kindness has touched so many lives, including mine.'}
+                        className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-all border border-white/10 hover:border-white/20"
+                      >
+                        💖 Their kindness
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormChange('story', formValues.story + (formValues.story ? ' ' : '') + 'Remember our amazing adventure together?'}
+                        className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-all border border-white/10 hover:border-white/20"
+                      >
+                        🌍 Our adventure
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFormChange('story', formValues.story + (formValues.story ? ' ' : '') + 'I still remember the surprise you gave me — it meant everything.'}
+                        className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-sm transition-all border border-white/10 hover:border-white/20"
+                      >
+                        🎁 A surprise moment
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

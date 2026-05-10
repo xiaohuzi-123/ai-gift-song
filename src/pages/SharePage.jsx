@@ -37,9 +37,24 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
     }
   }, [phase]);
 
+  // Use proxy URL for Suno audio to bypass CORS
+  const getAudioSource = () => {
+    if (!audioUrl) return null;
+    // If it's a Suno CDN URL, use the proxy endpoint
+    if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai')) {
+      return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
+    }
+    return audioUrl;
+  };
+
   // Auto play music when player shows
   useEffect(() => {
     if (showPlayer && audioRef.current && audioUrl) {
+      // Set the audio source with proxy if needed
+      const audioSource = getAudioSource();
+      if (audioRef.current.src !== audioSource) {
+        audioRef.current.src = audioSource;
+      }
       setTimeout(() => {
         audioRef.current?.play().then(() => {
           setIsPlaying(true);

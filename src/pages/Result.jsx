@@ -100,10 +100,21 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     return () => clearInterval(interval);
   }, []);
 
+  // Use proxy URL for Suno audio to bypass CORS
+  const getAudioSource = () => {
+    if (!audioUrl) return null;
+    // If it's a Suno CDN URL, use the proxy endpoint
+    if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai')) {
+      return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
+    }
+    return audioUrl;
+  };
+
   // Handle audio playback with 30-second limit
   useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.src = audioUrl;
+    const audioSource = getAudioSource();
+    if (audioSource && audioRef.current) {
+      audioRef.current.src = audioSource;
       if (isPlaying) {
         audioRef.current.play().catch(err => {
           console.error('Audio play error:', err);
@@ -243,6 +254,11 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           audioRef.current.currentTime = 0;
           setCurrentTime(0);
           setShowUpgradePrompt(false);
+        }
+        // Ensure audio source is set (in case it wasn't loaded yet)
+        const audioSource = getAudioSource();
+        if (audioRef.current.src !== audioSource && audioSource) {
+          audioRef.current.src = audioSource;
         }
         audioRef.current.play().catch(err => {
           console.error('Audio play error:', err);
