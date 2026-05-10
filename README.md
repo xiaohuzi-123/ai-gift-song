@@ -1,16 +1,73 @@
-# React + Vite
+# AI Gift Song - A Song Only They Understand 🎵
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Create a personalized AI-generated song that's a unique musical gift, with hidden secrets only the recipient will understand.
 
-Currently, two official plugins are available:
+![AI Gift Song](https://img.shields.io/badge/AI-Gift%20Song-ff6b9d?style=for-the-badge)
+![Vercel](https://img.shields.io/badge/Vercel-Ready-000000?style=for-the-badge)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- **AI-Powered Song Generation** - Using Suno API for realistic, high-quality music
+- **Personalized Lyrics** - Based on your story, memories, and inside jokes
+- **Secret Messages** - Hidden details only you and the recipient will understand
+- **Beautiful UI** - Heartwarming, gift-like presentation
+- **Shareable** - Generate a unique link to share the song experience
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🎯 How It Works
 
-## Expanding the ESLint configuration
+1. **Share Your Story** - Tell us about your relationship with the recipient
+2. **Add Personal Touches** - Nicknames, shared memories, inside jokes
+3. **Choose the Vibe** - Select emotion and music style
+4. **Generate & Gift** - Get your unique AI-generated song
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+- **Frontend**: React 19, TailwindCSS 4, Vite
+- **Backend**: Vercel Serverless Functions
+- **AI**: Suno API (via Evolink)
+- **Deployment**: Vercel
+
+## 🚀 Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env
+# Edit .env and add your SUNO_API_KEY
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## 📁 Project Structure
+
+```
+ai-gift-song/
+├── api/                    # Vercel serverless functions
+│   ├── generate.js        # Song generation endpoint
+│   ├── status.js          # Task status polling
+│   └── callback.js        # Webhook callback handler
+├── src/
+│   ├── components/        # React components
+│   ├── pages/             # Page components
+│   └── utils/             # Utilities (lyrics generator)
+├── public/                # Static assets
+├── vercel.json           # Vercel configuration
+└── package.json
+```
+
+## 🔧 Environment Variables
+
+```env
+SUNO_API_KEY=your_suno_api_key
+EVOLINK_API_KEY=your_evolink_api_key  # Alternative
+```
+
+## 📄 License
+
+MIT License - Feel free to use and modify!
