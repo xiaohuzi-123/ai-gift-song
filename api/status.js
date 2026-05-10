@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
 
     // Call Suno API to check status
-    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY;
+    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY || 'sk-I89uPwlUSBk3ulPR3YzJZx9OPEBtZcR05NRKWWKgVqHWDhsL';
     
     if (!apiKey) {
       return res.status(500).json({ error: 'API key not configured' });

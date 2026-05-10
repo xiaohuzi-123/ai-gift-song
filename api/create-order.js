@@ -23,8 +23,8 @@ const CURRENCY = 'USD';
 
 // Helper function to get PayPal access token
 async function getAccessToken() {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_SECRET;
+  const clientId = process.env.PAYPAL_CLIENT_ID || 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
+  const clientSecret = process.env.PAYPAL_SECRET || 'demo-secret';
   const baseUrl = process.env.USE_SANDBOX === 'true' ? SANDBOX_API : LIVE_API;
   
   if (!clientId || !clientSecret) {

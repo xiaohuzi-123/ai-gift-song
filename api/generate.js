@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       : undefined;
 
     // 5. Call Suno API via Evolink
-    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY;
+    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY || 'sk-I89uPwlUSBk3ulPR3YzJZx9OPEBtZcR05NRKWWKgVqHWDhsL';
     
     if (!apiKey) {
       // If no API key, return mock response for development
