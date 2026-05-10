@@ -108,7 +108,13 @@ function Generating({ onComplete, formData, onResult }) {
         })
       });
       
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Server returned invalid response. Please try again.');
+      }
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to start generation');
