@@ -339,7 +339,7 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
                 </div>
 
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => setFormStep(1)}
                   disabled={!isStep1Valid()}
                   className={`w-full btn-cta ${!isStep1Valid() ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
