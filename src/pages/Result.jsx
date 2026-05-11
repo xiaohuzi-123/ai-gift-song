@@ -197,12 +197,17 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     };
   }, [isPlaying, isPaid, currentTime]);
 
-  // Initialize PayPal button
+  // Initialize PayPal button - with cleanup to prevent double render
   useEffect(() => {
     if (isPaid || !paypalContainerRef.current || !paypalClientId) return;
     
-    // Check if PayPal SDK is loaded
-    if (window.paypal && paypalContainerRef.current && !paypalContainerRef.current.hasChildNodes()) {
+    // Wait for PayPal SDK to load, then render buttons
+    const renderPayPalButtons = () => {
+      if (!window.paypal || !paypalContainerRef.current || isPaid) return;
+      
+      // Clear any existing buttons first (prevent double render)
+      paypalContainerRef.current.innerHTML = '';
+      
       window.paypal.Buttons({
         style: {
           layout: 'vertical',
@@ -310,8 +315,33 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           console.log('Payment cancelled');
         }
       }).render(paypalContainerRef.current);
+    };
+    
+    // Try rendering immediately if SDK is ready, otherwise wait
+    if (window.paypal) {
+      renderPayPalButtons();
+    } else {
+      // Poll for PayPal SDK to load (max 10 seconds)
+      let checks = 0;
+      const checkInterval = setInterval(() => {
+        checks++;
+        if (window.paypal) {
+          clearInterval(checkInterval);
+          renderPayPalButtons();
+        } else if (checks > 20) {
+          clearInterval(checkInterval);
+          console.warn('PayPal SDK failed to load after 10 seconds');
+        }
+      }, 500);
     }
-  }, [isPaid, songId, title, setIsPaid, paypalClientId]);
+    
+    // Cleanup
+    return () => {
+      if (paypalContainerRef.current) {
+        paypalContainerRef.current.innerHTML = '';
+      }
+    };
+  }, [isPaid, paypalClientId]);
 
   const togglePlay = () => {
     if (!audioUrl) {
