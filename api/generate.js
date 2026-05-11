@@ -44,8 +44,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Dynamic import for ESM compatibility
-    const { generateLyrics, extractSecrets, buildStyle, getVocalGender } = await import('../src/utils/lyricsGenerator.js');
+    // Import lyrics generator from local API directory
+    const { generateLyrics, extractSecrets, buildStyle, getVocalGender } = await import('./lyricsGenerator.js');
 
     // 1. Generate lyrics using our custom generator
     const lyrics = generateLyrics({
