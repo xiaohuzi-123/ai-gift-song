@@ -88,25 +88,27 @@ export default async function handler(req, res) {
       });
     }
 
+    const requestBody = {
+        model: 'suno-v5-beta',
+        custom_mode: true,
+        prompt: lyrics,
+        style: sunoStyle,
+        title: `A Song for ${recipientName}`,
+        vocal_gender: vocalGender || 'f',
+        negative_tags: 'Heavy Metal, Screaming, Harsh vocals, Distorted guitars',
+        style_weight: 0.55 + Math.random() * 0.25,
+        weirdness: 0.3 + Math.random() * 0.4,
+        callback_url: callbackUrl,
+        wait_audio: false // We'll poll for results
+      };
+
     const response = await fetch('https://api.evolink.ai/v1/audios/generations', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        model: 'suno-v5-beta',
-        custom_mode: true,
-        prompt: lyrics,
-        style: sunoStyle,
-        title: `A Song for ${recipientName}`,
-        vocal_gender: vocalGender,
-        negative_tags: 'Heavy Metal, Screaming, Harsh vocals, Distorted guitars',
-        style_weight: 0.55 + Math.random() * 0.25,
-        weirdness: 0.3 + Math.random() * 0.4,
-        callback_url: callbackUrl,
-        wait_audio: false // We'll poll for results
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {

@@ -1077,7 +1077,7 @@ function buildStyle(emotion, voiceType, songStyle) {
 function getVocalGender(voiceType) {
   if (voiceType === 'male') return 'm';
   if (voiceType === 'female') return 'f';
-  return undefined; // duet uses lyrics tags
+  return 'f'; // duet defaults to female lead, duet structure is in lyrics tags
 }
 
 export {
