@@ -1,42 +1,29 @@
 /**
  * PayPal Create Order API
  * Creates a PayPal order for song purchase
- * 
- * Environment Variables Required:
- * - PAYPAL_CLIENT_ID: Your PayPal Business Client ID
- * - PAYPAL_SECRET: Your PayPal Business Secret
- * - USE_SANDBOX: Set to 'true' for testing (optional, defaults to sandbox)
- * 
- * For testing without a PayPal Business account:
- * 1. Go to https://developer.paypal.com/
- * 2. Create a sandbox account
- * 3. Get your sandbox Client ID and Secret
- * 4. Set PAYPAL_CLIENT_ID and PAYPAL_SECRET in .env
- * 5. Set USE_SANDBOX=true
  */
 
 const SANDBOX_API = 'https://api-m.sandbox.paypal.com';
 const LIVE_API = 'https://api-m.paypal.com';
 
-const PRICE = parseFloat(process.env.SONG_PRICE) || 4.99;
+const PRICE = 4.99;
 const CURRENCY = 'USD';
 
-// Helper function to get PayPal access token
 async function getAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_SECRET;
-  const baseUrl = process.env.USE_SANDBOX === 'true' ? SANDBOX_API : LIVE_API;
+  const useSandbox = process.env.USE_SANDBOX !== 'false'; // default true
+  const baseUrl = useSandbox ? SANDBOX_API : LIVE_API;
   
   if (!clientId || !clientSecret) {
-    throw new Error('PayPal credentials not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_SECRET in .env');
+    console.error('Missing PayPal credentials. PAYPAL_CLIENT_ID:', !!clientId, 'PAYPAL_SECRET:', !!clientSecret);
+    throw new Error('PayPal credentials not configured');
   }
-  
-  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   
   const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${auth}`,
+      'Authorization': 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64'),
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: 'grant_type=client_credentials',
@@ -44,8 +31,8 @@ async function getAccessToken() {
   
   if (!response.ok) {
     const error = await response.text();
-    console.error('PayPal auth error:', error);
-    throw new Error('Failed to authenticate with PayPal');
+    console.error('PayPal auth error:', response.status, error);
+    throw new Error('PayPal authentication failed');
   }
   
   const data = await response.json();
@@ -53,7 +40,14 @@ async function getAccessToken() {
 }
 
 export default async function handler(req, res) {
-  // Only allow POST
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -61,55 +55,37 @@ export default async function handler(req, res) {
   try {
     const { amount, songId, songTitle } = req.body;
     
-    // Validate request
-    if (!amount || amount !== PRICE) {
-      return res.status(400).json({ error: 'Invalid amount' });
+    // Validate amount (accept both string and number)
+    const numAmount = parseFloat(amount);
+    if (!numAmount || Math.abs(numAmount - PRICE) > 0.01) {
+      console.error('Invalid amount:', amount, 'expected:', PRICE);
+      return res.status(400).json({ error: 'Invalid amount', expected: PRICE, received: amount });
     }
     
     const songDisplayTitle = songTitle || 'AI Gift Song - Full Version';
-    const itemPrice = PRICE;
     
     // Get PayPal access token
     const accessToken = await getAccessToken();
-    const baseUrl = process.env.USE_SANDBOX === 'true' ? SANDBOX_API : LIVE_API;
+    const useSandbox = process.env.USE_SANDBOX !== 'false';
+    const baseUrl = useSandbox ? SANDBOX_API : LIVE_API;
     
-    // Create PayPal order
+    // Create PayPal order - simplified payload
     const orderPayload = {
       intent: 'CAPTURE',
-      purchase_units: [
-        {
-          reference_id: songId || 'default-song',
-          description: songDisplayTitle,
-          amount: {
-            currency_code: CURRENCY,
-            value: itemPrice.toFixed(2),
-            breakdown: {
-              item_total: {
-                currency_code: CURRENCY,
-                value: itemPrice.toFixed(2),
-              },
-            },
-          },
-          items: [
-            {
-              name: songDisplayTitle,
-              description: 'Full MP3 download of your personalized AI gift song',
-              unit_amount: {
-                currency_code: CURRENCY,
-                value: itemPrice.toFixed(2),
-              },
-              quantity: '1',
-              category: 'DIGITAL_GOODS',
-            },
-          ],
+      purchase_units: [{
+        reference_id: songId || 'gift-song',
+        description: songDisplayTitle,
+        amount: {
+          currency_code: CURRENCY,
+          value: PRICE.toFixed(2),
         },
-      ],
+      }],
       application_context: {
         brand_name: 'AI Gift Song',
         landing_page: 'BILLING',
         user_action: 'PAY_NOW',
-        return_url: `${req.headers.origin || 'https://example.com'}/result?payment=success`,
-        cancel_url: `${req.headers.origin || 'https://example.com'}/result?payment=cancelled`,
+        return_url: `${req.headers.origin || 'https://ai-gift-song.vercel.app'}`,
+        cancel_url: `${req.headers.origin || 'https://ai-gift-song.vercel.app'}`,
       },
     };
     
@@ -124,32 +100,20 @@ export default async function handler(req, res) {
     
     if (!response.ok) {
       const error = await response.text();
-      console.error('PayPal create order error:', error);
-      return res.status(500).json({ error: 'Failed to create PayPal order', details: error });
+      console.error('PayPal create order error:', response.status, error);
+      return res.status(500).json({ error: 'PayPal order creation failed', details: error });
     }
     
     const orderData = await response.json();
-    
     console.log('PayPal order created:', orderData.id);
     
     return res.status(200).json({
       orderId: orderData.id,
       status: orderData.status,
-      approveUrl: orderData.links?.find(link => link.rel === 'approve')?.href,
     });
     
   } catch (error) {
     console.error('Create order error:', error);
-    
-    // Return a more helpful error message
-    if (error.message.includes('credentials')) {
-      return res.status(500).json({
-        error: 'PayPal not configured',
-        message: 'Payment processing is not available. Please configure PayPal credentials.',
-        details: 'Set PAYPAL_CLIENT_ID and PAYPAL_SECRET in your .env file. For testing, use sandbox credentials from https://developer.paypal.com/',
-      });
-    }
-    
     return res.status(500).json({
       error: 'Failed to create order',
       message: error.message,

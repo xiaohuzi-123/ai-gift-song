@@ -418,7 +418,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
             </span>
             {duration && (
               <span className="px-3 py-1 rounded-full bg-white/10 text-white/60 text-sm">
-                {Math.round(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
+                {formatTime(duration)}
               </span>
             )}
           </div>
@@ -559,8 +559,8 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
                 </h3>
                 <p className="text-white/70 mb-4">
                   {showUpgradePrompt 
-                    ? `You\'ve heard ${PREVIEW_DURATION} seconds - unlock the full ${Math.round((duration || 180) / 60)}:${((duration || 180) % 60).toString().padStart(2, '0')} song!`
-                    : `Get unlimited access to this ${Math.round((duration || 180) / 60)}:${((duration || 180) % 60).toString().padStart(2, '0')} personalized song`}
+                    ? `You've heard ${PREVIEW_DURATION} seconds - unlock the full ${formatTime(duration || 180)} song!`
+                    : `Get unlimited access to this ${formatTime(duration || 180)} personalized song`}
                   {' for just '}<span className="text-pink-400 font-bold">${FULL_PRICE}</span>
                 </p>
                 
