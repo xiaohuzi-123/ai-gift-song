@@ -3,10 +3,10 @@
  * Poll task status and retrieve results
  * 
  * Endpoint: GET https://api.evolink.ai/v1/tasks/{task_id}
+ * 
+ * NOTE: Vercel Serverless Functions don't share memory between invocations.
+ * lyrics and secretDetails are passed via query parameters from frontend.
  */
-
-// Shared task storage - will be merged with generate.js in Vercel edge
-const taskResults = new Map();
 
 export default async function handler(req, res) {
   // CORS headers
@@ -23,37 +23,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { taskId } = req.query;
+    const { taskId, lyrics, secretDetails } = req.query;
 
     if (!taskId) {
       return res.status(400).json({ error: 'Task ID required' });
     }
 
-    // Check local cache first (for callback results)
-    const cachedResult = taskResults.get(taskId);
-    
-    // Check if it's a mock task
+    // Check if it's a mock/demo task
     if (taskId.startsWith('mock_') || taskId.startsWith('demo_')) {
-      // Return demo result for development
-      const cached = taskResults.get(taskId);
+      // Parse lyrics and secrets from query params (base64 encoded if needed)
+      let parsedLyrics = lyrics || '';
+      let parsedSecrets = [];
+      try {
+        if (secretDetails) {
+          parsedSecrets = JSON.parse(decodeURIComponent(secretDetails));
+        }
+      } catch (e) {
+        console.warn('Failed to parse secretDetails:', e);
+      }
+      
       return res.json({
         task_id: taskId,
         status: 'completed',
         data: [{
           id: `demo_audio_${Date.now()}`,
-          title: `A Song for ${cached?.recipientName || 'You'}`,
-          audio_url: cached?.demoAudioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          title: 'A Song for You',
+          audio_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
           duration: 180,
           created_at: new Date().toISOString()
         }],
-        lyrics: cached?.lyrics || '',
-        secretDetails: cached?.secretDetails || [],
+        lyrics: parsedLyrics,
+        secretDetails: parsedSecrets,
         is_demo: true
       });
     }
 
-    // Call Suno API to check status
-    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY || 'sk-I89uPwlUSBk3ulPR3YzJZx9OPEBtZcR05NRKWWKgVqHWDhsL';
+    // Call Suno/Evolink API to check status
+    const apiKey = process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY;
     
     if (!apiKey) {
       return res.status(500).json({ error: 'API key not configured' });
@@ -78,10 +84,16 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    // Update cache if we have stored info
-    if (cachedResult && data.status === 'completed') {
-      data.lyrics = cachedResult.lyrics;
-      data.secretDetails = cachedResult.secretDetails;
+    // Pass lyrics and secretDetails from frontend (since we can't use server memory)
+    if (lyrics) {
+      data.lyrics = decodeURIComponent(lyrics);
+    }
+    if (secretDetails) {
+      try {
+        data.secretDetails = JSON.parse(decodeURIComponent(secretDetails));
+      } catch (e) {
+        console.warn('Failed to parse secretDetails:', e);
+      }
     }
 
     // Normalize Evolink response format to match frontend expectations
@@ -110,5 +122,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-export { taskResults };

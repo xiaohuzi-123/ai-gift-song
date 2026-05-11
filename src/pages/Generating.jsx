@@ -122,6 +122,11 @@ function Generating({ onComplete, formData, onResult }) {
       
       setTaskId(data.taskId);
       
+      // Store lyrics and secrets for passing to status API
+      // (Vercel serverless doesn't share memory between functions)
+      const generatedLyrics = data.lyrics || '';
+      const generatedSecrets = data.secretDetails || [];
+      
       // Demo mode - skip to result with demo audio
       if (data.isDemo || data.mock) {
         setTimeout(() => {
@@ -138,8 +143,8 @@ function Generating({ onComplete, formData, onResult }) {
         return;
       }
       
-      // Start polling for results
-      pollForResults(data.taskId);
+      // Start polling for results (pass lyrics/secrets via query params)
+      pollForResults(data.taskId, generatedLyrics, generatedSecrets);
       
     } catch (err) {
       console.error('Generation error:', err);
@@ -147,7 +152,7 @@ function Generating({ onComplete, formData, onResult }) {
     }
   };
 
-  const pollForResults = async (id) => {
+  const pollForResults = async (id, lyrics, secretDetails) => {
     let attempts = 0;
     const maxAttempts = 180; // 3 minutes max (180 * 1 second)
     
@@ -155,7 +160,12 @@ function Generating({ onComplete, formData, onResult }) {
       attempts++;
       
       try {
-        const response = await fetch(`/api/status?taskId=${id}`);
+        // Pass lyrics and secrets via query params (since serverless doesn't share memory)
+        const params = new URLSearchParams({ taskId: id });
+        if (lyrics) params.set('lyrics', encodeURIComponent(lyrics));
+        if (secretDetails?.length > 0) params.set('secretDetails', encodeURIComponent(JSON.stringify(secretDetails)));
+        
+        const response = await fetch(`/api/status?${params.toString()}`);
         const data = await response.json();
         
         if (data.status === 'completed') {
@@ -169,8 +179,8 @@ function Generating({ onComplete, formData, onResult }) {
             audioUrl: data.data?.[0]?.audio_url,
             audioUrl2: data.data?.[1]?.audio_url,
             title: data.data?.[0]?.title || `A Song for ${recipientName}`,
-            lyrics: data.lyrics,
-            secretDetails: data.secretDetails,
+            lyrics: data.lyrics || lyrics,
+            secretDetails: data.secretDetails || secretDetails,
             duration: data.data?.[0]?.duration
           });
           

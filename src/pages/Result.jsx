@@ -110,17 +110,16 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     return () => clearInterval(interval);
   }, []);
 
-  // Use proxy URL for Suno audio to bypass CORS
+  // Get audio source for playback - return original URL directly
+  // Browser can handle CORS for these public CDN URLs
   const getAudioSource = () => {
     if (!audioUrl) return null;
-    // Demo audio URL (soundhelix) - use directly
+    // Demo audio URL - use directly
     if (audioUrl.includes('soundhelix.com')) {
       return audioUrl;
     }
-    // If it's a Suno/Evolink CDN URL, use the proxy endpoint
-    if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai') || audioUrl.includes('media.evolink.ai') || audioUrl.includes('aiquickdraw')) {
-      return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
-    }
+    // For all other URLs (including Evolink/Suno CDN), use directly
+    // Browser can access these public CDN URLs without proxy
     return audioUrl;
   };
 
@@ -479,7 +478,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           </div>
         </div>
 
-        {/* ===== 40-Second Preview Section ===== */}
+        {/* ===== Upgrade/Payment Section - Always Visible for Non-Paid Users ===== */}
         {!isPaid && audioUrl && (
           <div className="glass-card p-8 mb-8 border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5">
             {/* Preview Header */}
@@ -530,56 +529,57 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
               </div>
             </div>
 
-            {/* Upgrade Prompt - shown after 40 seconds */}
-            {showUpgradePrompt && (
-              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-2xl p-6 border border-pink-500/30 animate-fade-in-up">
-                <div className="text-center">
-                  <div className="text-4xl mb-3">💝</div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    Love this song?
-                  </h3>
-                  <p className="text-white/70 mb-4">
-                    Unlock the full version for just <span className="text-pink-400 font-bold">${FULL_PRICE}</span>
+            {/* Upgrade Prompt - Always visible */}
+            <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-2xl p-6 border border-pink-500/30 animate-fade-in-up">
+              <div className="text-center">
+                <div className="text-4xl mb-3">{showUpgradePrompt ? '💝' : '✨'}</div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {showUpgradePrompt ? 'Love this song?' : 'Unlock the Full Version'}
+                </h3>
+                <p className="text-white/70 mb-4">
+                  {showUpgradePrompt 
+                    ? `You\'ve heard ${PREVIEW_DURATION} seconds - unlock the full ${Math.round((duration || 180) / 60)}:${((duration || 180) % 60).toString().padStart(2, '0')} song!`
+                    : `Get unlimited access to this ${Math.round((duration || 180) / 60)}:${((duration || 180) % 60).toString().padStart(2, '0')} personalized song`}
+                  {' for just '}<span className="text-pink-400 font-bold">${FULL_PRICE}</span>
+                </p>
+                
+                {/* Price comparison */}
+                <div className="bg-white/5 rounded-lg px-4 py-2 mb-6 inline-block">
+                  <p className="text-white/60 text-sm">
+                    Others charge <span className="line-through text-white/40">$179</span>
+                    <span className="text-green-400 font-bold ml-2">We're just ${FULL_PRICE}</span>
                   </p>
-                  
-                  {/* Price comparison */}
-                  <div className="bg-white/5 rounded-lg px-4 py-2 mb-6 inline-block">
-                    <p className="text-white/60 text-sm">
-                      Others charge <span className="line-through text-white/40">$179</span>
-                      <span className="text-green-400 font-bold ml-2">We're just ${FULL_PRICE}</span>
-                    </p>
-                  </div>
+                </div>
 
-                  {/* Payment Error */}
-                  {paymentError && (
-                    <div className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">
-                      {paymentError}
+                {/* Payment Error */}
+                {paymentError && (
+                  <div className="bg-red-500/20 text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">
+                    {paymentError}
+                  </div>
+                )}
+
+                {/* PayPal Button Container */}
+                <div ref={paypalContainerRef} className="max-w-xs mx-auto">
+                  {isProcessingPayment && (
+                    <div className="text-center py-4">
+                      <div className="inline-block w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      <span className="text-white/70">Processing...</span>
                     </div>
                   )}
-
-                  {/* PayPal Button Container */}
-                  <div ref={paypalContainerRef} className="max-w-xs mx-auto">
-                    {isProcessingPayment && (
-                      <div className="text-center py-4">
-                        <div className="inline-block w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                        <span className="text-white/70">Processing...</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Manual PayPal SDK check */}
-                  {!paypalClientId ? (
-                    <p className="text-white/40 text-xs mt-2">
-                      Loading payment options...
-                    </p>
-                  ) : !window.paypal ? (
-                    <p className="text-yellow-400/60 text-xs mt-2">
-                      PayPal SDK loading...
-                    </p>
-                  ) : null}
                 </div>
+
+                {/* Manual PayPal SDK check */}
+                {!paypalClientId ? (
+                  <p className="text-white/40 text-xs mt-2">
+                    Loading payment options...
+                  </p>
+                ) : !window.paypal ? (
+                  <p className="text-yellow-400/60 text-xs mt-2">
+                    PayPal SDK loading...
+                  </p>
+                ) : null}
               </div>
-            )}
+            </div>
           </div>
         )}
 
