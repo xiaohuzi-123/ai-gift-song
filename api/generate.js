@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     // 3. Get vocal gender for API
     const vocalGender = getVocalGender(voiceType);
 
-    // 4. Prepare callback URL (Vercel provides this)
+    // 4. Prepare callback URL (optional - Evolink works without it)
     const callbackUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}/api/callback`
       : undefined;
@@ -174,9 +174,19 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Generate API Error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
+    
+    // If Suno API call fails for any reason, fall back to demo mode
+    // so users can still experience the product
+    console.warn('Falling back to demo mode due to error');
+    return res.json({
+      success: true,
+      taskId: `demo_${Date.now()}`,
+      lyrics: lyrics || 'A song from the heart',
+      secretDetails: secretDetails || [],
+      style: sunoStyle || 'Pop',
+      isDemo: true,
+      demoAudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      message: 'Demo mode - ' + (error.message || 'Service temporarily unavailable')
     });
   }
 }
