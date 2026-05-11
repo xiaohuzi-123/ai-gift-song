@@ -210,44 +210,48 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           shape: 'rect',
           label: 'paypal'
         },
+        // Create order CLIENT-SIDE - more reliable, doesn't depend on server env vars
         createOrder: async (data, actions) => {
           try {
             setIsProcessingPayment(true);
             setPaymentError('');
             
-            // Call backend to create PayPal order
-            const response = await fetch('/api/create-order', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                amount: FULL_PRICE,
-                songId: songId || 'default-song',
-                songTitle: title || 'AI Gift Song'
-              }),
+            // Try server-side order creation first
+            try {
+              const response = await fetch('/api/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  amount: FULL_PRICE,
+                  songId: songId || 'default-song',
+                  songTitle: title || 'AI Gift Song'
+                }),
+              });
+              
+              if (response.ok) {
+                const orderData = await response.json();
+                if (orderData.orderId) {
+                  return orderData.orderId;
+                }
+              }
+              console.warn('Server-side order creation failed, falling back to client-side');
+            } catch (e) {
+              console.warn('Server create-order error, falling back to client-side:', e.message);
+            }
+            
+            // Fallback: create order client-side using PayPal SDK
+            return actions.order.create({
+              purchase_units: [{
+                description: title || 'AI Gift Song - Full Version',
+                amount: {
+                  currency_code: 'USD',
+                  value: FULL_PRICE.toFixed(2),
+                },
+              }],
             });
-            
-            const orderData = await response.json();
-            
-            if (!response.ok) {
-              console.error('Create order failed:', response.status, orderData);
-              setPaymentError(orderData.message || orderData.error || 'Failed to create order. Please try again.');
-              throw new Error(orderData.message || orderData.error || 'Failed to create order');
-            }
-            
-            if (!orderData.orderId) {
-              console.error('No orderId in response:', orderData);
-              setPaymentError('Payment setup failed. Please try again.');
-              throw new Error('No order ID returned');
-            }
-            
-            return orderData.orderId;
           } catch (error) {
             console.error('Order creation error:', error);
-            if (!paymentError) {
-              setPaymentError('Failed to create order. Please try again.');
-            }
+            setPaymentError('Payment setup failed. Please try again.');
             throw error;
           } finally {
             setIsProcessingPayment(false);
@@ -255,40 +259,47 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
         },
         onApprove: async (data, actions) => {
           try {
-            // Capture the payment
-            const response = await fetch('/api/capture-order', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                orderId: data.orderID,
-                songId: songId || 'default-song'
-              }),
-            });
+            // Try server-side capture first
+            try {
+              const response = await fetch('/api/capture-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderId: data.orderID,
+                  songId: songId || 'default-song'
+                }),
+              });
+              
+              const captureData = await response.json();
+              if (captureData.success) {
+                setIsPaid(true);
+                setShowUpgradePrompt(false);
+                if (captureData.downloadUrl) {
+                  const link = document.createElement('a');
+                  link.href = captureData.downloadUrl;
+                  link.download = `${title || 'gift-song'}.mp3`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+                return;
+              }
+              console.warn('Server capture failed, trying client-side capture');
+            } catch (e) {
+              console.warn('Server capture error, trying client-side:', e.message);
+            }
             
-            const captureData = await response.json();
-            
-            if (captureData.success) {
+            // Fallback: client-side capture
+            const details = await actions.order.capture();
+            if (details.status === 'COMPLETED') {
               setIsPaid(true);
               setShowUpgradePrompt(false);
-              
-              // Provide download link
-              if (captureData.downloadUrl) {
-                // Trigger download
-                const link = document.createElement('a');
-                link.href = captureData.downloadUrl;
-                link.download = `${title || 'gift-song'}.mp3`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }
             } else {
-              setPaymentError(captureData.message || 'Payment verification failed');
+              setPaymentError('Payment not completed. Please try again.');
             }
           } catch (error) {
             console.error('Payment capture error:', error);
-            setPaymentError('Payment verification failed. Please contact support.');
+            setPaymentError('Payment verification failed. Please try again.');
           }
         },
         onError: (error) => {
