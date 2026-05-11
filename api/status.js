@@ -84,6 +84,22 @@ export default async function handler(req, res) {
       data.secretDetails = cachedResult.secretDetails;
     }
 
+    // Normalize Evolink response format to match frontend expectations
+    // Evolink returns: result_data[{audio_url, title, ...}], results[url, url]
+    // Frontend expects: data[{audio_url, title, ...}]
+    if (data.result_data && !data.data) {
+      data.data = data.result_data;
+    }
+    if (data.data && data.data.length > 0 && !data.data[0].audio_url && data.results) {
+      // Fallback: map results URLs to data objects
+      data.data = data.results.map((url, i) => ({
+        audio_url: url,
+        title: data.result_data?.[i]?.title || `A Song for You`,
+        duration: data.result_data?.[i]?.duration || 180,
+        id: data.result_data?.[i]?.result_id || `audio_${i}`
+      }));
+    }
+
     return res.json(data);
 
   } catch (error) {

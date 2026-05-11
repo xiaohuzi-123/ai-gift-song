@@ -107,8 +107,8 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     if (audioUrl.includes('soundhelix.com')) {
       return audioUrl;
     }
-    // If it's a Suno CDN URL, use the proxy endpoint
-    if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai')) {
+    // If it's a Suno/Evolink CDN URL, use the proxy endpoint
+    if (audioUrl.includes('cdn.suno.ai') || audioUrl.includes('suno.ai') || audioUrl.includes('media.evolink.ai') || audioUrl.includes('aiquickdraw')) {
       return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
     }
     return audioUrl;
