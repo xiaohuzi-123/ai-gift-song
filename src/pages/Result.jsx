@@ -26,7 +26,7 @@ const defaultSecrets = [
 // For testing, use sandbox client ID: https://developer.paypal.com/docs/subscriptions/integration/test/
 const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
 
-const PREVIEW_DURATION = 30; // 30 seconds preview
+const PREVIEW_DURATION = 40; // 40 seconds preview
 const FULL_PRICE = 4.99;
 
 function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid }) {
@@ -40,6 +40,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
   const [paymentError, setPaymentError] = useState('');
   const audioRef = useRef(null);
   const paypalContainerRef = useRef(null);
+  const previewTimerRef = useRef(null);
   
   // Get data from form or result
   const { emotion, recipientName, nickname, yourName, occasion, voiceType, songStyle } = formData || {};
@@ -114,7 +115,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     return audioUrl;
   };
 
-  // Handle audio playback with 30-second limit
+  // Handle audio playback with 40-second limit
   useEffect(() => {
     const audioSource = getAudioSource();
     if (audioSource && audioRef.current) {
@@ -128,7 +129,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     }
   }, [audioUrl, isPlaying]);
 
-  // Time update handler for 30-second preview limit
+  // Time update handler for 40-second preview limit
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -137,7 +138,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
       const current = audio.currentTime;
       setCurrentTime(current);
       
-      // Enforce 30-second preview limit for non-paid users
+      // Enforce 40-second preview limit for non-paid users
       if (!isPaid && current >= PREVIEW_DURATION) {
         audio.pause();
         setIsPlaying(false);
@@ -148,6 +149,34 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
   }, [isPaid]);
+
+  // Backup timer to ensure 40-second cutoff even if timeupdate doesn't fire frequently
+  useEffect(() => {
+    if (isPlaying && !isPaid) {
+      // Clear any existing timer
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+      
+      // Set a timer to check at 40 seconds
+      const remainingTime = (PREVIEW_DURATION - currentTime) * 1000;
+      if (remainingTime > 0) {
+        previewTimerRef.current = setTimeout(() => {
+          if (audioRef.current && !isPaid && audioRef.current.currentTime >= PREVIEW_DURATION - 1) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+            setShowUpgradePrompt(true);
+          }
+        }, remainingTime + 500);
+      }
+    }
+    
+    return () => {
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+    };
+  }, [isPlaying, isPaid, currentTime]);
 
   // Initialize PayPal button
   useEffect(() => {
@@ -252,6 +281,10 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        // Clear preview timer on pause
+        if (previewTimerRef.current) {
+          clearTimeout(previewTimerRef.current);
+        }
       } else {
         // If resuming from upgrade prompt, start from 0
         if (showUpgradePrompt) {
@@ -268,6 +301,23 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           console.error('Audio play error:', err);
           setAudioError(true);
         });
+        
+        // Set backup timer for preview cutoff
+        if (!isPaid) {
+          if (previewTimerRef.current) {
+            clearTimeout(previewTimerRef.current);
+          }
+          const remainingTime = (PREVIEW_DURATION - (audioRef.current.currentTime || 0)) * 1000;
+          if (remainingTime > 0) {
+            previewTimerRef.current = setTimeout(() => {
+              if (audioRef.current && !isPaid && audioRef.current.currentTime >= PREVIEW_DURATION - 1) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+                setShowUpgradePrompt(true);
+              }
+            }, remainingTime + 500);
+          }
+        }
       }
     }
     setIsPlaying(!isPlaying);
@@ -420,7 +470,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           </div>
         </div>
 
-        {/* ===== 30-Second Preview Section ===== */}
+        {/* ===== 40-Second Preview Section ===== */}
         {!isPaid && audioUrl && (
           <div className="glass-card p-8 mb-8 border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5">
             {/* Preview Header */}
@@ -431,7 +481,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
                 </div>
                 <div>
                   <div className="font-semibold text-white">Free Preview</div>
-                  <div className="text-white/50 text-sm">30 seconds included</div>
+                  <div className="text-white/50 text-sm">40 seconds included</div>
                 </div>
               </div>
               <div className="text-right">
@@ -440,7 +490,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
               </div>
             </div>
 
-            {/* Progress Bar with 30s marker */}
+            {/* Progress Bar with 40s marker */}
             <div className="mb-6">
               <div className="flex justify-between text-sm text-white/60 mb-2">
                 <span>{formatTime(currentTime)} / {isPaid ? formatTime(duration || 180) : formatTime(PREVIEW_DURATION)}</span>
@@ -455,7 +505,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-100"
                   style={{ width: `${getProgressPercent()}%` }}
                 />
-                {/* 30-second marker */}
+                {/* 40-second marker */}
                 {!isPaid && (
                   <div 
                     className="absolute top-0 h-full w-0.5 bg-yellow-400 z-10"
@@ -471,7 +521,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
               </div>
             </div>
 
-            {/* Upgrade Prompt - shown after 30 seconds */}
+            {/* Upgrade Prompt - shown after 40 seconds */}
             {showUpgradePrompt && (
               <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-2xl p-6 border border-pink-500/30 animate-fade-in-up">
                 <div className="text-center">
@@ -599,58 +649,55 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
           )}
         </div>
         
-        {/* Secret Details */}
-        {showSecrets && (
-          <div className="glass-card p-8 md:p-12 mb-12 animate-fade-in-up">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
-                <span className="text-lg">🔐</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold">3 Details Only They Understand</h3>
-                <p className="text-white/50 text-sm">Hover to reveal what makes this song truly personal</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {displaySecrets.map((secret, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300"
-                  style={{ animationDelay: `${index * 0.2}s` }}
-                >
-                  <span className="w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <span className="text-white/40 text-xs block">{secret.label}</span>
-                    <span className="secret-highlight text-lg">
-                      {secret.text}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button 
+        {/* Share Button */}
+        <div className="text-center mb-8">
+          <button
             onClick={onShare}
-            className="btn-cta inline-flex items-center justify-center gap-3"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Share as Musical Letter
           </button>
-          <button 
+          <p className="text-white/40 text-sm mt-3">Send this song to someone special</p>
+        </div>
+        
+        {/* Secrets Section */}
+        <div className="glass-card p-8 mb-12">
+          <h3 className="text-xl font-semibold mb-6 text-white/80 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center text-sm">🔐</span>
+            Secrets in the Song
+          </h3>
+          
+          {showSecrets && (
+            <div className="space-y-4 animate-fade-in">
+              {displaySecrets.map((secret, index) => (
+                <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="text-pink-400/80 text-sm uppercase tracking-wide mb-1">{secret.label}</div>
+                  <div className="text-white/90">{secret.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {!showSecrets && (
+            <p className="text-white/30 italic">
+              Secrets will be revealed as the song plays...
+            </p>
+          )}
+        </div>
+        
+        {/* CTA: Create Your Own */}
+        <div className="text-center">
+          <button
             onClick={onRestart}
-            className="btn-outline inline-flex items-center justify-center gap-2"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-white font-semibold transition-all duration-300"
           >
-            Create Another Song
+            <span className="text-xl">✨</span>
+            Create Your Own Gift Song
           </button>
+          <p className="text-white/40 text-sm mt-3">Make a personalized song for someone special</p>
         </div>
       </div>
     </div>

@@ -18,7 +18,48 @@ function App() {
     songStyle: ''
   });
   const [resultData, setResultData] = useState(null);
-  const [isPaid, setIsPaid] = useState(false); // Payment state for 30s preview unlock
+  const [isPaid, setIsPaid] = useState(false); // Payment state for 40s preview unlock
+  const [shareUrl, setShareUrl] = useState('');
+
+  // Check for shared link in URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#share=')) {
+      try {
+        const encoded = hash.slice(7);
+        const data = JSON.parse(decodeURIComponent(atob(encoded)));
+        
+        setFormData({
+          emotion: data.e || '',
+          recipientName: data.n || '',
+          yourName: data.y || '',
+          occasion: data.o || '',
+          story: '',
+          details: '',
+          voiceType: data.v || '',
+          songStyle: data.s || ''
+        });
+        
+        setResultData({
+          audioUrl: data.a,
+          title: data.t,
+          duration: data.d,
+          lyrics: data.ly,
+          songId: 'shared'
+        });
+        
+        // Navigate to share page
+        setStep('share');
+        
+        // Clear the hash from URL without reloading
+        if (window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      } catch (e) {
+        console.error('Invalid share data:', e);
+      }
+    }
+  }, []);
 
   const handleStartCreation = () => {
     const element = document.getElementById('emotions-section');
@@ -51,6 +92,25 @@ function App() {
   };
 
   const handleShare = () => {
+    if (resultData) {
+      // Generate share URL with encoded data
+      const shareData = {
+        a: resultData.audioUrl,
+        t: resultData.title,
+        e: formData.emotion,
+        n: formData.recipientName,
+        y: formData.yourName,
+        o: formData.occasion,
+        v: formData.voiceType,
+        s: formData.songStyle,
+        d: resultData.duration,
+        ly: resultData.lyrics
+      };
+      
+      const encoded = btoa(encodeURIComponent(JSON.stringify(shareData)));
+      const url = `https://ai-gift-song.vercel.app/#share=${encoded}`;
+      setShareUrl(url);
+    }
     setStep('share');
   };
 
@@ -58,6 +118,7 @@ function App() {
     setStep('landing');
     setResultData(null);
     setIsPaid(false); // Reset payment state on restart
+    setShareUrl(''); // Clear share URL
     setFormData({
       emotion: '',
       recipientName: '',
@@ -106,6 +167,7 @@ function App() {
           onRestart={handleRestart}
           isPaid={isPaid}
           setIsPaid={setIsPaid}
+          shareUrl={shareUrl}
         />
       )}
     </div>

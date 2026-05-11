@@ -4,10 +4,10 @@ import './SharePage.css';
 // PayPal Client ID - Replace with your actual PayPal Business Client ID
 const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
 
-const PREVIEW_DURATION = 30;
+const PREVIEW_DURATION = 40;
 const FULL_PRICE = 4.99;
 
-function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
+function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid, shareUrl }) {
   const [phase, setPhase] = useState('envelope'); // envelope -> opening -> letter -> player
   const [showPlayer, setShowPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -18,8 +18,9 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
   const [copySuccess, setCopySuccess] = useState(false);
   const audioRef = useRef(null);
   const paypalContainerRef = useRef(null);
+  const previewTimerRef = useRef(null);
 
-  const { audioUrl, title, duration, songId } = resultData || {};
+  const { audioUrl, title, duration, songId, lyrics } = resultData || {};
   
   // Phase transition sequence
   useEffect(() => {
@@ -70,7 +71,7 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
     }
   }, [showPlayer, audioUrl]);
 
-  // Time update handler for 30-second preview limit
+  // Time update handler for 40-second preview limit
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -79,7 +80,7 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
       const current = audio.currentTime;
       setCurrentTime(current);
       
-      // Enforce 30-second preview limit for non-paid users
+      // Enforce 40-second preview limit for non-paid users
       if (!isPaid && current >= PREVIEW_DURATION) {
         audio.pause();
         setIsPlaying(false);
@@ -90,6 +91,34 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
     audio.addEventListener('timeupdate', handleTimeUpdate);
     return () => audio.removeEventListener('timeupdate', handleTimeUpdate);
   }, [isPaid]);
+
+  // Backup timer to ensure 40-second cutoff even if timeupdate doesn't fire frequently
+  useEffect(() => {
+    if (isPlaying && !isPaid) {
+      // Clear any existing timer
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+      
+      // Set a timer to check at 40 seconds
+      const remainingTime = (PREVIEW_DURATION - currentTime) * 1000;
+      if (remainingTime > 0) {
+        previewTimerRef.current = setTimeout(() => {
+          if (audioRef.current && !isPaid && audioRef.current.currentTime >= PREVIEW_DURATION - 1) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+            setShowUpgradePrompt(true);
+          }
+        }, remainingTime + 500);
+      }
+    }
+    
+    return () => {
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+    };
+  }, [isPlaying, isPaid, currentTime]);
 
   // Initialize PayPal button
   useEffect(() => {
@@ -184,21 +213,27 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
   };
 
   const handleCopyLink = () => {
-    const currentUrl = window.location.href;
-    navigator.clipboard.writeText(currentUrl).then(() => {
+    // Use shareUrl prop if provided, otherwise fallback to current URL
+    const urlToCopy = shareUrl || window.location.href;
+    navigator.clipboard.writeText(urlToCopy).then(() => {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     });
   };
 
   const getShareUrl = () => {
-    return window.location.href;
+    // Use shareUrl prop if provided, otherwise fallback to current URL
+    return shareUrl || window.location.href;
   };
 
   const togglePlay = () => {
     if (audioRef.current && audioUrl) {
       if (isPlaying) {
         audioRef.current.pause();
+        // Clear preview timer on pause
+        if (previewTimerRef.current) {
+          clearTimeout(previewTimerRef.current);
+        }
       } else {
         if (showUpgradePrompt) {
           audioRef.current.currentTime = 0;
@@ -206,6 +241,23 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
           setShowUpgradePrompt(false);
         }
         audioRef.current.play();
+        
+        // Set backup timer for preview cutoff
+        if (!isPaid) {
+          if (previewTimerRef.current) {
+            clearTimeout(previewTimerRef.current);
+          }
+          const remainingTime = (PREVIEW_DURATION - (audioRef.current.currentTime || 0)) * 1000;
+          if (remainingTime > 0) {
+            previewTimerRef.current = setTimeout(() => {
+              if (audioRef.current && !isPaid && audioRef.current.currentTime >= PREVIEW_DURATION - 1) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+                setShowUpgradePrompt(true);
+              }
+            }, remainingTime + 500);
+          }
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -235,7 +287,7 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid }) {
   };
 
   // Sample lyrics with placeholder - in real app this comes from API
-  const sampleLyrics = `Verse 1:
+  const sampleLyrics = lyrics || `Verse 1:
 When I think of ${formData.recipientName || 'you'}, my heart starts to soar
 Like a bird in the sky, I feel love like never before
 Every moment with you is a treasure so bright
@@ -438,10 +490,9 @@ You're safe in my arms, perfectly warm`;
               <span className="time-total">{formatTime(isPaid ? (duration || 180) : PREVIEW_DURATION)}</span>
             </div>
             
-            {/* Hidden audio element */}
+            {/* Hidden audio element - src is set via useEffect and getAudioSource() */}
             <audio 
               ref={audioRef} 
-              src={audioUrl || "/placeholder-audio.mp3"} 
               onEnded={() => {
                 setIsPlaying(false);
                 if (!isPaid) setShowUpgradePrompt(true);
