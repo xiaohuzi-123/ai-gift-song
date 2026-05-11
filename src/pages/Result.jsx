@@ -228,15 +228,26 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
               }),
             });
             
+            const orderData = await response.json();
+            
             if (!response.ok) {
-              throw new Error('Failed to create order');
+              console.error('Create order failed:', response.status, orderData);
+              setPaymentError(orderData.message || orderData.error || 'Failed to create order. Please try again.');
+              throw new Error(orderData.message || orderData.error || 'Failed to create order');
             }
             
-            const orderData = await response.json();
+            if (!orderData.orderId) {
+              console.error('No orderId in response:', orderData);
+              setPaymentError('Payment setup failed. Please try again.');
+              throw new Error('No order ID returned');
+            }
+            
             return orderData.orderId;
           } catch (error) {
             console.error('Order creation error:', error);
-            setPaymentError('Failed to create order. Please try again.');
+            if (!paymentError) {
+              setPaymentError('Failed to create order. Please try again.');
+            }
             throw error;
           } finally {
             setIsProcessingPayment(false);
