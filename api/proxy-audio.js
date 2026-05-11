@@ -1,13 +1,15 @@
 /**
  * Audio Proxy Endpoint
- * Bypasses CORS restrictions when playing Suno audio URLs
+ * Bypasses CORS/firewall restrictions when playing Suno/Evolink audio URLs
+ * Supports range requests for audio seeking
  */
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Content-Length, Accept-Ranges');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -34,32 +36,46 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid URL format' });
     }
 
-    // Fetch audio from external URL
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AI-Gift-Song/1.0)'
-      }
-    });
+    // Build fetch headers, forward Range if present
+    const fetchHeaders = {
+      'User-Agent': 'Mozilla/5.0 (compatible; AI-Gift-Song/1.0)'
+    };
+    if (req.headers.range) {
+      fetchHeaders['Range'] = req.headers.range;
+    }
 
-    if (!response.ok) {
+    // Fetch audio from external URL
+    const response = await fetch(url, { headers: fetchHeaders });
+
+    if (!response.ok && response.status !== 206) {
       console.error('Failed to fetch audio:', response.status, url);
       return res.status(response.status).json({ 
         error: 'Failed to fetch audio from source' 
       });
     }
 
-    // Get content type and verify it's audio
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('audio')) {
-      console.warn('Unexpected content type:', contentType);
-    }
+    const contentType = response.headers.get('content-type') || 'audio/mpeg';
+    const contentLength = response.headers.get('content-length');
+    const contentRange = response.headers.get('content-range');
+    const acceptRanges = response.headers.get('accept-ranges') || 'bytes';
 
     // Stream the audio content
     const buffer = await response.arrayBuffer();
     
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', buffer.byteLength);
+    res.setHeader('Content-Type', contentType.includes('audio') ? contentType : 'audio/mpeg');
+    res.setHeader('Accept-Ranges', acceptRanges);
     res.setHeader('Cache-Control', 'public, max-age=3600');
+    
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    } else {
+      res.setHeader('Content-Length', buffer.byteLength);
+    }
+    
+    if (contentRange) {
+      res.setHeader('Content-Range', contentRange);
+      res.status(206);
+    }
     
     res.send(Buffer.from(buffer));
 

@@ -160,12 +160,8 @@ function Generating({ onComplete, formData, onResult }) {
       attempts++;
       
       try {
-        // Pass lyrics and secrets via query params (since serverless doesn't share memory)
-        const params = new URLSearchParams({ taskId: id });
-        if (lyrics) params.set('lyrics', encodeURIComponent(lyrics));
-        if (secretDetails?.length > 0) params.set('secretDetails', encodeURIComponent(JSON.stringify(secretDetails)));
-        
-        const response = await fetch(`/api/status?${params.toString()}`);
+        // Simple poll - just taskId, lyrics are kept in React state
+        const response = await fetch(`/api/status?taskId=${id}`);
         const data = await response.json();
         
         if (data.status === 'completed') {
@@ -173,14 +169,14 @@ function Generating({ onComplete, formData, onResult }) {
           setStage('complete');
           setProgress(100);
           
-          // Pass results to parent
+          // Pass results to parent - lyrics come from generate response (React state), not from server
           onResult({
             taskId: id,
             audioUrl: data.data?.[0]?.audio_url,
             audioUrl2: data.data?.[1]?.audio_url,
             title: data.data?.[0]?.title || `A Song for ${recipientName}`,
-            lyrics: data.lyrics || lyrics,
-            secretDetails: data.secretDetails || secretDetails,
+            lyrics: lyrics,
+            secretDetails: secretDetails,
             duration: data.data?.[0]?.duration
           });
           

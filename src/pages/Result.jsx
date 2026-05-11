@@ -81,8 +81,10 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
 
   // Format time display
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const totalSecs = Math.round(seconds); // Fix floating point: 202.4 → 202
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -110,17 +112,16 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
     return () => clearInterval(interval);
   }, []);
 
-  // Get audio source for playback - return original URL directly
-  // Browser can handle CORS for these public CDN URLs
+  // Get audio source - try direct URL first, fallback to proxy
   const getAudioSource = () => {
     if (!audioUrl) return null;
     // Demo audio URL - use directly
     if (audioUrl.includes('soundhelix.com')) {
       return audioUrl;
     }
-    // For all other URLs (including Evolink/Suno CDN), use directly
-    // Browser can access these public CDN URLs without proxy
-    return audioUrl;
+    // For external CDN URLs, use proxy to bypass China firewall issues
+    // Direct access may fail for users behind GFW
+    return `/api/proxy-audio?url=${encodeURIComponent(audioUrl)}`;
   };
 
   // Handle audio playback with 40-second limit
@@ -131,7 +132,17 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
       if (isPlaying) {
         audioRef.current.play().catch(err => {
           console.error('Audio play error:', err);
-          setAudioError(true);
+          // If proxy fails, try direct URL as fallback
+          if (audioUrl && !audioUrl.includes('soundhelix.com')) {
+            console.log('Proxy failed, trying direct URL...');
+            audioRef.current.src = audioUrl;
+            audioRef.current.play().catch(err2 => {
+              console.error('Direct URL also failed:', err2);
+              setAudioError(true);
+            });
+          } else {
+            setAudioError(true);
+          }
         });
       }
     }
@@ -307,7 +318,17 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
         }
         audioRef.current.play().catch(err => {
           console.error('Audio play error:', err);
-          setAudioError(true);
+          // If proxy fails, try direct URL as fallback
+          if (audioUrl && !audioUrl.includes('soundhelix.com') && audioRef.current.src.includes('proxy-audio')) {
+            console.log('Proxy failed in togglePlay, trying direct URL...');
+            audioRef.current.src = audioUrl;
+            audioRef.current.play().catch(err2 => {
+              console.error('Direct URL also failed:', err2);
+              setAudioError(true);
+            });
+          } else {
+            setAudioError(true);
+          }
         });
         
         // Set backup timer for preview cutoff
@@ -568,15 +589,31 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
                   )}
                 </div>
 
-                {/* Manual PayPal SDK check */}
+                {/* Manual PayPal SDK check with retry */}
                 {!paypalClientId ? (
                   <p className="text-white/40 text-xs mt-2">
                     Loading payment options...
                   </p>
                 ) : !window.paypal ? (
-                  <p className="text-yellow-400/60 text-xs mt-2">
-                    PayPal SDK loading...
-                  </p>
+                  <div className="mt-3">
+                    <p className="text-yellow-400/60 text-xs mb-2">
+                      PayPal SDK loading...
+                    </p>
+                    <button
+                      onClick={() => {
+                        // Retry loading PayPal SDK
+                        if (paypalClientId && !window.paypal) {
+                          const script = document.createElement('script');
+                          script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD&intent=capture`;
+                          script.async = true;
+                          document.head.appendChild(script);
+                        }
+                      }}
+                      className="text-pink-400 text-xs underline hover:text-pink-300"
+                    >
+                      Retry loading PayPal
+                    </button>
+                  </div>
                 ) : null}
               </div>
             </div>
