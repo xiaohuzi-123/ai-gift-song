@@ -1,12 +1,34 @@
 import { useState, useMemo } from 'react';
 import { getActiveHoliday, getHolidayCountdown } from '../utils/holidayDetector';
 
-const emotions = [
-  { id: 'heartfelt', name: 'Heartfelt', gradient: 'from-rose-400 to-pink-600', icon: '❤️' },
-  { id: 'funny', name: 'Funny', gradient: 'from-amber-400 to-orange-500', icon: '😂' },
-  { id: 'celebration', name: 'Celebration', gradient: 'from-violet-500 to-purple-600', icon: '🎉' },
-  { id: 'healing', name: 'Healing', gradient: 'from-cyan-400 to-blue-500', icon: '💙' },
-  { id: 'hype', name: 'Hype', gradient: 'from-red-500 to-orange-500', icon: '🔥' }
+const scenarios = [
+  {
+    id: 'birthday',
+    emoji: '🎂',
+    title: 'Birthday Song',
+    subtitle: "A gift they'll remember forever",
+    gradient: 'from-pink-500 to-rose-600',
+    emotion: 'celebration',
+    occasion: 'Birthday'
+  },
+  {
+    id: 'wedding',
+    emoji: '💍',
+    title: 'Love & Wedding',
+    subtitle: 'Your love story, set to music',
+    gradient: 'from-violet-500 to-purple-600',
+    emotion: 'heartfelt',
+    occasion: 'Wedding / Anniversary'
+  },
+  {
+    id: 'missing',
+    emoji: '💌',
+    title: 'Missing You',
+    subtitle: "When words aren't enough",
+    gradient: 'from-cyan-500 to-blue-600',
+    emotion: 'healing',
+    occasion: 'Thinking of You'
+  }
 ];
 
 const occasions = ['Birthday', 'Anniversary', 'Just Because', 'Apology', 'Thank You', 'Congratulations', 'Get Well Soon', 'Goodbye'];
@@ -49,6 +71,18 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
     songStyle: formData.songStyle || 'pop'
   });
   const [formStep, setFormStep] = useState(0);
+
+  const handleScenarioClick = (scenario) => {
+    const element = document.getElementById('form-section');
+    setFormValues(prev => ({ ...prev, occasion: scenario.occasion }));
+    onEmotionSelect(scenario.emotion);
+    setLocalEmotion(scenario.emotion);
+    if (element) {
+      setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }, 200);
+    }
+  };
 
   const handleEmotionClick = (emotionId) => {
     setLocalEmotion(emotionId);
@@ -105,18 +139,6 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           <p className="text-xl md:text-3xl text-white/80 font-light mt-8 max-w-2xl mx-auto leading-relaxed">
             {activeHoliday.subtitle}
           </p>
-          
-          <div className="mt-8 flex flex-wrap justify-center gap-4 text-white/60">
-            <span className="flex items-center gap-2">
-              <span className="text-green-400">✓</span> 25,000+ songs created
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="text-yellow-400">★</span> 4.8 rating
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="text-pink-400">♥</span> From $4.99
-            </span>
-          </div>
           
           <button onClick={onStartCreation} className="mt-14 group">
             <span className="btn-cta inline-flex items-center gap-3">
@@ -229,34 +251,53 @@ function Landing({ formData, onStartCreation, onEmotionSelect, onFormSubmit }) {
           
           <div className="glass-card p-6 md:p-8">
             
-            {/* ============ STEP 1: Emotion + Names + Story ============ */}
+            {/* ============ STEP 1: Names + Story ============ */}
             {formStep === 0 && (
               <div className="space-y-6">
-                {/* Emotion Selection */}
+                {/* Scenario Cards */}
                 <div>
-                  <label className="block text-sm font-medium text-white/60 mb-3 text-center">Choose the vibe</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {emotions.map((emotion) => (
+                  <label className="block text-sm font-medium text-white/60 mb-3 text-center">Choose a scenario</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {scenarios.map((scenario) => (
                       <button
-                        key={emotion.id}
-                        onClick={() => handleEmotionClick(emotion.id)}
-                        className={`p-3 rounded-xl transition-all duration-300 text-center ${
-                          selectedEmotion === emotion.id
-                            ? 'bg-gradient-to-br ' + emotion.gradient + ' shadow-lg scale-105'
+                        key={scenario.id}
+                        onClick={() => handleScenarioClick(scenario)}
+                        className={`relative p-4 rounded-2xl transition-all duration-300 text-left bg-gradient-to-br ${scenario.gradient} hover:scale-105 hover:shadow-xl hover:shadow-pink-500/20`}
+                      >
+                        <span className="text-3xl block mb-2">{scenario.emoji}</span>
+                        <div className="font-bold text-white text-base">{scenario.title}</div>
+                        <div className="text-white/70 text-xs mt-1">{scenario.subtitle}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-center text-white/30 text-xs mt-3">Or skip ahead to <button onClick={() => document.getElementById('names-section')?.scrollIntoView({ behavior: 'smooth' })} className="underline hover:text-white/50">fill in details</button></p>
+                </div>
+
+                {/* Vibe fallback */}
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2 text-center">
+                    Pick a vibe <span className="text-white/30">(required)</span>
+                  </label>
+                  <div className="flex justify-center gap-3">
+                    {scenarios.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleEmotionClick(s.emotion)}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all duration-300 ${
+                          selectedEmotion === s.emotion
+                            ? `bg-gradient-to-br ${s.gradient} shadow-lg scale-110`
                             : 'bg-white/5 hover:bg-white/10 border border-white/10'
                         }`}
+                        title={s.title}
                       >
-                        <span className="text-2xl">{emotion.icon}</span>
-                        <span className={`block text-xs mt-1 ${selectedEmotion === emotion.id ? 'text-white' : 'text-white/60'}`}>
-                          {emotion.name}
-                        </span>
+                        {s.emoji}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 {/* Names */}
-                <div className="grid grid-cols-2 gap-4">
+                <div id="names-section" className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-white/60 mb-2">For (their name)</label>
                     <input

@@ -115,5 +115,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), mockApiPlugin()],
   server: {
     port: 5173
+  },
+  define: {
+    'import.meta.env.VITE_PAYPAL_CLIENT_ID': JSON.stringify(process.env.VITE_PAYPAL_CLIENT_ID || '')
   }
 })

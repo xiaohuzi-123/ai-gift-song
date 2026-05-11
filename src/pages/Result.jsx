@@ -22,9 +22,8 @@ const defaultSecrets = [
   { text: "The inside joke from your details", label: "Inside Joke" }
 ];
 
-// PayPal Client ID - Replace with your actual PayPal Business Client ID
-// For testing, use sandbox client ID: https://developer.paypal.com/docs/subscriptions/integration/test/
-const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
+// PayPal Client ID loaded from environment variable
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
 
 const PREVIEW_DURATION = 40; // 40 seconds preview
 const FULL_PRICE = 4.99;

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import './SharePage.css';
 
-// PayPal Client ID - Replace with your actual PayPal Business Client ID
-const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
+// PayPal Client ID loaded from environment variable
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
 
 const PREVIEW_DURATION = 40;
 const FULL_PRICE = 4.99;
@@ -594,7 +594,54 @@ You're safe in my arms, perfectly warm`;
               </div>
             </div>
           )}
-          <button onClick={onRestart} className="cta-button">
+          {formData && (
+            <div style={{ textAlign: 'center', margin: '24px 0 16px' }}>
+              <div style={{ 
+                display: 'flex', alignItems: 'center', gap: '16px', 
+                margin: '16px 0',
+                color: 'rgba(255,255,255,0.3)' 
+              }}>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                <span style={{ fontSize: '14px' }}>or</span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+              </div>
+              <button 
+                onClick={() => {
+                  if (onRestart && typeof onRestart === 'function') {
+                    onRestart({ 
+                      autoFill: { 
+                        recipientName: formData?.yourName || '', 
+                        yourName: formData?.recipientName || '' 
+                      } 
+                    });
+                  }
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,107,181,0.15), rgba(147,51,234,0.15))',
+                  border: '1px solid rgba(255,107,181,0.4)',
+                  borderRadius: '16px',
+                  padding: '16px 32px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  transition: 'all 0.3s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <span style={{ fontSize: '24px' }}>💝</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div>Write a Song Back</div>
+                  <div style={{ fontSize: '12px', fontWeight: '400', opacity: 0.6 }}>Send them a song in return</div>
+                </div>
+              </button>
+            </div>
+          )}
+          <button onClick={() => onRestart ? onRestart() : window.location.href = '/'} className="cta-button">
             <span className="cta-icon">✨</span>
             Make Your Own Gift Song
           </button>

@@ -114,22 +114,22 @@ function App() {
     setStep('share');
   };
 
-  const handleRestart = () => {
+  const handleRestart = (options) => {
+    const autoFill = options?.autoFill || {};
     setStep('landing');
     setResultData(null);
-    setIsPaid(false); // Reset payment state on restart
-    setShareUrl(''); // Clear share URL
+    setIsPaid(false);
+    setShareUrl('');
     setFormData({
       emotion: '',
-      recipientName: '',
-      yourName: '',
+      recipientName: autoFill.recipientName || '',
+      yourName: autoFill.yourName || '',
       occasion: '',
       story: '',
       details: '',
       voiceType: '',
       songStyle: ''
     });
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
