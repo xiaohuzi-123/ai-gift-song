@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import './SharePage.css';
 
-// PayPal Client ID loaded from environment variable
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
-
 const PREVIEW_DURATION = 40;
 const FULL_PRICE = 4.99;
 
 function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid, shareUrl }) {
+  const [paypalClientId, setPaypalClientId] = useState('');
   const [phase, setPhase] = useState('envelope'); // envelope -> opening -> letter -> player
   const [showPlayer, setShowPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,6 +17,18 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid, shareUr
   const audioRef = useRef(null);
   const paypalContainerRef = useRef(null);
   const previewTimerRef = useRef(null);
+
+  // Fetch PayPal Client ID from server at runtime
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.paypalClientId) {
+          setPaypalClientId(data.paypalClientId);
+        }
+      })
+      .catch(err => console.error('Failed to load config:', err));
+  }, []);
 
   const { audioUrl, title, duration, songId, lyrics } = resultData || {};
   
@@ -122,7 +132,7 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid, shareUr
 
   // Initialize PayPal button
   useEffect(() => {
-    if (isPaid || !paypalContainerRef.current) return;
+    if (isPaid || !paypalContainerRef.current || !paypalClientId) return;
     
     if (window.paypal && paypalContainerRef.current && !paypalContainerRef.current.hasChildNodes()) {
       window.paypal.Buttons({
@@ -204,7 +214,7 @@ function SharePage({ formData, resultData, onRestart, isPaid, setIsPaid, shareUr
         }
       }).render(paypalContainerRef.current);
     }
-  }, [isPaid, songId, title, setIsPaid]);
+  }, [isPaid, songId, title, setIsPaid, paypalClientId]);
 
   const handleEnvelopeClick = () => {
     if (phase === 'envelope') {

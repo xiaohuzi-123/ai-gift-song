@@ -22,13 +22,11 @@ const defaultSecrets = [
   { text: "The inside joke from your details", label: "Inside Joke" }
 ];
 
-// PayPal Client ID loaded from environment variable
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || '';
-
 const PREVIEW_DURATION = 40; // 40 seconds preview
 const FULL_PRICE = 4.99;
 
 function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid }) {
+  const [paypalClientId, setPaypalClientId] = useState('');
   const [currentLine, setCurrentLine] = useState(0);
   const [showSecrets, setShowSecrets] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -40,6 +38,18 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
   const audioRef = useRef(null);
   const paypalContainerRef = useRef(null);
   const previewTimerRef = useRef(null);
+
+  // Fetch PayPal Client ID from server at runtime
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.paypalClientId) {
+          setPaypalClientId(data.paypalClientId);
+        }
+      })
+      .catch(err => console.error('Failed to load config:', err));
+  }, []);
   
   // Get data from form or result
   const { emotion, recipientName, nickname, yourName, occasion, voiceType, songStyle } = formData || {};
@@ -179,7 +189,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
 
   // Initialize PayPal button
   useEffect(() => {
-    if (isPaid || !paypalContainerRef.current) return;
+    if (isPaid || !paypalContainerRef.current || !paypalClientId) return;
     
     // Check if PayPal SDK is loaded
     if (window.paypal && paypalContainerRef.current && !paypalContainerRef.current.hasChildNodes()) {
@@ -269,7 +279,7 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
         }
       }).render(paypalContainerRef.current);
     }
-  }, [isPaid, songId, title, setIsPaid]);
+  }, [isPaid, songId, title, setIsPaid, paypalClientId]);
 
   const togglePlay = () => {
     if (!audioUrl) {
@@ -558,11 +568,15 @@ function Result({ formData, resultData, onShare, onRestart, isPaid, setIsPaid })
                   </div>
 
                   {/* Manual PayPal SDK check */}
-                  {!window.paypal && (
-                    <p className="text-yellow-400/60 text-xs mt-2">
-                      PayPal SDK loading... If this persists, please configure your PayPal Client ID.
+                  {!paypalClientId ? (
+                    <p className="text-white/40 text-xs mt-2">
+                      Loading payment options...
                     </p>
-                  )}
+                  ) : !window.paypal ? (
+                    <p className="text-yellow-400/60 text-xs mt-2">
+                      PayPal SDK loading...
+                    </p>
+                  ) : null}
                 </div>
               </div>
             )}

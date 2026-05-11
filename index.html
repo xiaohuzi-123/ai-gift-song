@@ -55,27 +55,26 @@
     <!-- PayPal Live SDK (for production - UNCOMMENT AND CONFIGURE) -->
     <!-- <script src="https://www.paypal.com/sdk/js?client-id=YOUR_LIVE_CLIENT_ID&currency=USD" data-sdk-integration-source="button-factory"></script> -->
     
-    <!-- Dynamic SDK loader that checks for PayPal credentials -->
+    <!-- Dynamic SDK loader that fetches PayPal Client ID from server -->
     <script>
-      // Check if we're in production or development
-      const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-      
-      // PayPal Client ID - Set via environment variable or replace directly
-      // For Vercel: Set in Project Settings > Environment Variables
-      // For local: Add to .env file
-      const PAYPAL_CLIENT_ID = 'ASVmBXV9BvBOt6mkrAMdQzXpVvyBgvCc2cCBYdh0_RhCJwwoa3NjVmLuY2PZz-IN8Z5FWn6CVqLJ8N61';
-      
-      // Only load if configured
-      if (PAYPAL_CLIENT_ID !== 'YOUR_PAYPAL_CLIENT_ID') {
-        const script = document.createElement('script');
-        script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&intent=capture`;
-        script.setAttribute('data-sdk-integration-source', 'button-factory');
-        script.async = true;
-        document.head.appendChild(script);
-        console.log('PayPal SDK loaded');
-      } else {
-        console.log('PayPal SDK not loaded - configure PAYPAL_CLIENT_ID to enable payments');
-      }
+      // Fetch PayPal Client ID from server config API at runtime
+      fetch('/api/config')
+        .then(res => res.json())
+        .then(data => {
+          if (data.paypalClientId) {
+            const script = document.createElement('script');
+            script.src = `https://www.paypal.com/sdk/js?client-id=${data.paypalClientId}&currency=USD&intent=capture`;
+            script.setAttribute('data-sdk-integration-source', 'button-factory');
+            script.async = true;
+            document.head.appendChild(script);
+            console.log('PayPal SDK loaded');
+          } else {
+            console.log('PayPal SDK not loaded - PAYPAL_CLIENT_ID not configured on server');
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load PayPal config:', err);
+        });
     </script>
   </head>
   <body>
