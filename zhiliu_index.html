@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智流AI - 电商AI工具站</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f5;min-height:100vh}
+.hd{background:linear-gradient(135deg,#FF6B35,#ff8f60);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.hd h1{font-size:18px;font-weight:700}
+.hd span{font-size:12px;opacity:.8}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #eee;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs button{flex:0 0 auto;padding:12px 14px;border:none;background:none;font-size:13px;cursor:pointer;color:#666;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:#FF6B35;border-bottom-color:#FF6B35;font-weight:600}
+.tab-c{display:none;padding:16px}
+.tab-c.on{display:block}
+.kb{margin-bottom:12px;display:flex;gap:8px;align-items:center}
+.kb label{font-size:13px;color:#666;white-space:nowrap;min-width:60px}
+.kb input,.kb select,.kb textarea{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;font-family:inherit}
+.kb input:focus,.kb textarea:focus,.kb select:focus{border-color:#FF6B35}
+.kb textarea{min-height:80px;resize:vertical}
+.btn{background:#FF6B35;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:14px;cursor:pointer;font-weight:600;width:100%}
+.btn:hover{background:#e55a25}
+.btn:disabled{background:#ccc;cursor:not-allowed}
+.btn2{background:#fff;color:#FF6B35;border:1px solid #FF6B35;border-radius:10px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:600}
+.btn2:hover{background:#fff8f5}
+.result{margin-top:16px}
+.result img{max-width:100%;border-radius:8px;cursor:pointer}
+.result-text{background:#fff;border-radius:10px;padding:12px;font-size:14px;line-height:1.8;white-space:pre-wrap;border:1px solid #eee;margin-top:8px;position:relative}
+.copy-btn{position:absolute;top:8px;right:8px;background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;color:#666}
+.copy-btn:hover{background:#FF6B35;color:#fff;border-color:#FF6B35}
+.tag{display:inline-block;background:#fff3ed;color:#FF6B35;padding:4px 12px;border-radius:16px;font-size:12px;margin:2px;cursor:pointer;border:1px solid #ffdcc8}
+.tag:hover{background:#FFE8DC}
+.sp{display:inline-block;width:16px;height:16px;border:2px solid #eee;border-top-color:#FF6B35;border-radius:50%;animation:sn .7s linear infinite;vertical-align:middle}
+@keyframes sn{to{transform:rotate(360deg)}}
+.preview{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+.preview .pi{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:2px solid #eee}
+.preview .pi img{width:100%;height:100%;object-fit:cover}
+.preview .pi .rm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.upload{border:2px dashed #ddd;border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:#999;transition:all .2s}
+.upload:hover{border-color:#FF6B35;color:#FF6B35}
+.upload input{display:none}
+.section{background:#fff;border-radius:10px;padding:16px;margin-bottom:12px;border:1px solid #eee}
+.section h3{font-size:14px;margin-bottom:8px;color:#333;font-weight:600}
+.tips{font-size:12px;color:#999;margin-top:8px;line-height:1.6}
+.chat-box{background:#fff;border-radius:10px;border:1px solid #eee;height:420px;display:flex;flex-direction:column}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;scroll-behavior:smooth}
+.chat-msgs .m{max-width:85%;margin-bottom:10px;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.chat-msgs .m.u{background:#FF6B35;color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.chat-msgs .m.b{background:#f5f5f5;color:#333;border-bottom-left-radius:4px}
+.chat-input{display:flex;gap:8px;padding:8px;border-top:1px solid #eee}
+.chat-input textarea{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;resize:none;height:40px;outline:none}
+.chat-input textarea:focus{border-color:#FF6B35}
+.chat-input button{background:#FF6B35;color:#fff;border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-weight:600;font-size:13px}
+.chat-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #f0f0f0;flex-wrap:wrap}
+.chat-toolbar label{font-size:12px;color:#666;white-space:nowrap}
+.chat-toolbar select{border:1px solid #ddd;border-radius:6px;padding:4px 8px;font-size:12px;outline:none;color:#333;background:#fff}
+.chat-toolbar button{background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:#666}
+.chat-toolbar button:hover{background:#fff3ed;color:#FF6B35;border-color:#FF6B35}
+.model-badge{display:inline-block;background:#fff3ed;color:#FF6B35;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.thinking-block{background:#f9f9f9;border-left:3px solid #FF6B35;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#888;border-radius:0 6px 6px 0;font-style:italic;max-height:120px;overflow-y:auto;display:none}
+.thinking-block.show{display:block}
+.trans-row{display:flex;gap:8px;margin-bottom:12px}
+.trans-box{flex:1;min-height:120px;border:1px solid #ddd;border-radius:8px;padding:10px;font-size:13px;line-height:1.8;outline:none;resize:vertical;font-family:inherit}
+.trans-box:focus{border-color:#FF6B35}
+.trans-box[readonly]{background:#f9f9f9;cursor:default}
+.lang-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.lang-row select{border:1px solid #ddd;border-radius:8px;padding:6px 12px;font-size:13px;outline:none;flex:1}
+.swap-btn{background:#fff;border:1px solid #ddd;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px;color:#666}
+.swap-btn:hover{border-color:#FF6B35;color:#FF6B35}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.badge{background:#f0f9ff;color:#0070f3;padding:3px 10px;border-radius:10px;font-size:11px;border:1px solid #bfe0ff}
+</style>
+</head>
+<body>
+<div class="hd">
+  <div>
+    <h1>🔥 智流AI</h1>
+    <span>电商人自己的AI工具站</span>
+  </div>
+  <div style="text-align:right;font-size:11px;opacity:.85;line-height:1.8">
+    <div>DeepSeek · Qwen · FLUX</div>
+    <div>多模型 稳定 高速</div>
+  </div>
+</div>
+
+<div class="tabs" id="mainTabs">
+  <button class="on" onclick="switchTab('img-edit',this)">🖼️ 换背景</button>
+  <button onclick="switchTab('img-gen',this)">🎨 生图</button>
+  <button onclick="switchTab('copy',this)">📝 文案</button>
+  <button onclick="switchTab('trans',this)">🌐 翻译</button>
+  <button onclick="switchTab('chat',this)">💬 聊天</button>
+  <button onclick="switchTab('key',this)">🔑 我的Key</button>
+</div>
+
+<!-- ============ 换背景 ============ -->
+<div class="tab-c on" id="tab-img-edit">
+  <div class="section">
+    <h3>🖼️ 商品换背景</h3>
+    <p class="tips">上传商品图，AI自动抠图换背景，约30秒出图 ·「代理直连，无需填Key」</p>
+    <div class="upload" id="editDrop" onclick="document.getElementById('editFile').click()">
+      📎 点击或拖拽上传商品图片
+      <input type="file" id="editFile" accept="image/*" onchange="previewEdit(this)">
+    </div>
+    <div class="preview" id="editPreview"></div>
+    <div class="kb"><label>背景描述</label><input id="editPrompt" placeholder="白色背景 / 厨房餐桌场景 / 阳光草坪..."></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="tag" onclick="setVal('editPrompt','纯白色背景，商品居中，专业商品图')">白底图</span>
+      <span class="tag" onclick="setVal('editPrompt','木质餐桌上，暖光，新鲜感，电商风格')">餐桌场景</span>
+      <span class="tag" onclick="setVal('editPrompt','超市冷柜里，灯光明亮，清洁感')">超市场景</span>
+      <span class="tag" onclick="setVal('editPrompt','户外草地，自然阳光，田园风')">户外场景</span>
+      <span class="tag" onclick="setVal('editPrompt','礼盒包装，红色喜庆背景，年货氛围')">节日礼盒</span>
+      <span class="tag" onclick="setVal('editPrompt','简约灰色渐变背景，高端质感，光影柔和')">高端灰底</span>
+    </div>
+    <button class="btn" id="editBtn" onclick="doEdit()">✨ 一键换背景</button>
+  </div>
+  <div class="result" id="editResult"></div>
+</div>
+
+<!-- ============ AI生图 ============ -->
+<div class="tab-c" id="tab-img-gen">
+  <div class="section">
+    <h3>🎨 AI生图</h3>
+    <p class="tips">输入描述，AI生成商品图/场景图/海报图</p>
+    <div class="kb"><label>图片描述</label><textarea id="genPrompt" placeholder="一只金黄色的土鸡，放在竹篮上，乡村厨房背景，自然光，高清摄影"></textarea></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="tag" onclick="setVal('genPrompt','无抗鸡排特写，肉质鲜嫩，白色盘子，高级餐厅风格，4K')">鸡排特写</span>
+      <span class="tag" onclick="setVal('genPrompt','土鸡蛋放在草编篮子里，田园风格，阳光，暖色调')">土鸡蛋</span>
+      <span class="tag" onclick="setVal('genPrompt','电商促销海报，红色背景，大字优惠，购物车元素，扁平风格')">促销海报</span>
+      <span class="tag" onclick="setVal('genPrompt','简约白底产品图，专业摄影，高清，商业用途')">白底产品</span>
+      <span class="tag" onclick="setVal('genPrompt','中国风食品包装设计，国潮元素，高端礼盒')">国潮包装</span>
+    </div>
+    <div class="kb"><label>选择模型</label>
+      <select id="genModel">
+        <option value="Kwai-Kolors/Kolors">🎨 Kolors（推荐，写实）</option>
+        <option value="black-forest-labs/FLUX.1-schnell">⚡ FLUX Schnell（最快）</option>
+        <option value="black-forest-labs/FLUX.1-dev">🌟 FLUX Dev（高质量）</option>
+        <option value="stabilityai/stable-diffusion-xl-base-1.0">🖌️ SDXL（经典）</option>
+        <option value="stabilityai/stable-diffusion-3-5-large">✨ SD3.5 Large（最新）</option>
+        <option value="Kwai-Kolors/Kolors-Lightning">🚀 Kolors Lightning（极速）</option>
+      </select>
+    </div>
+    <div class="kb"><label>图片尺寸</label>
+      <select id="genSize">
+        <option value="1024x1024">1024×1024（方形）</option>
+        <option value="1024x768">1024×768（横版）</option>
+        <option value="768x1024">768×1024（竖版/商品图）</option>
+        <option value="1280x720">1280×720（16:9）</option>
+      </select>
+    </div>
+    <button class="btn" id="genBtn" onclick="doGen()">🎨 生成图片</button>
+  </div>
+  <div class="result" id="genResult"></div>
+</div>
+
+<!-- ============ 写文案 ============ -->
+<div class="tab-c" id="tab-copy">
+  <div class="section">
+    <h3>📝 AI写文案</h3>
+    <p class="tips">商品标题、详情页、抖音文案，一句话搞定</p>
+    <div class="kb"><label>商品信息</label><textarea id="copyInfo" placeholder="无抗鸡排，108项0检出，一片鸡排3杯牛奶的蛋白，孩子放心吃"></textarea></div>
+    <div class="kb"><label>文案类型</label>
+      <select id="copyType">
+        <option value="商品标题">商品标题（30字内，含关键词）</option>
+        <option value="详情页卖点">详情页卖点文案（分点输出）</option>
+        <option value="抖音带货文案">抖音带货文案（口播脚本）</option>
+        <option value="小红书笔记">小红书笔记（含标题+正文+话题）</option>
+        <option value="客服话术">客服常见问题回复话术</option>
+        <option value="直播话术">直播间带货话术（节奏感强）</option>
+        <option value="朋友圈文案">朋友圈推广文案（简短有力）</option>
+      </select>
+    </div>
+    <div class="kb"><label>选择模型</label>
+      <select id="copyModel">
+        <option value="deepseek-ai/DeepSeek-V3">🔥 DeepSeek-V3（推荐，最强文案）</option>
+        <option value="Qwen/Qwen3-235B-A22B">⭐ Qwen3-235B（超强创意）</option>
+        <option value="Qwen/Qwen3-32B">💎 Qwen3-32B（均衡）</option>
+        <option value="deepseek-ai/DeepSeek-R1">🧠 DeepSeek-R1（深度思考）</option>
+        <option value="Qwen/Qwen3-14B">🔹 Qwen3-14B（轻快）</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="tag" onclick="setVal('copyInfo','无抗鸡排，108项0检出，高蛋白低脂肪，孩子放心吃')">鸡排文案</span>
+      <span class="tag" onclick="setVal('copyInfo','土鸡蛋，散养土鸡下蛋，蛋黄橙红，口感香浓，无添加')">鸡蛋文案</span>
+      <span class="tag" onclick="setVal('copyInfo','风干鸡，传统工艺，自然风干30天，年货送礼首选')">风干鸡文案</span>
+    </div>
+    <button class="btn" id="copyBtn" onclick="doCopy()">📝 生成文案</button>
+  </div>
+  <div class="result" id="copyResult"></div>
+</div>
+
+<!-- ============ 翻译 ============ -->
+<div class="tab-c" id="tab-trans">
+  <div class="section">
+    <h3>🌐 AI翻译</h3>
+    <p class="tips">支持中英日韩等多语言互译，专业术语准确，电商跨境必备</p>
+    <div class="lang-row">
+      <select id="transFrom">
+        <option value="中文">🇨🇳 中文</option>
+        <option value="英文">🇺🇸 英文</option>
+        <option value="日文">🇯🇵 日文</option>
+        <option value="韩文">🇰🇷 韩文</option>
+        <option value="法文">🇫🇷 法文</option>
+        <option value="德文">🇩🇪 德文</option>
+        <option value="西班牙文">🇪🇸 西班牙文</option>
+        <option value="阿拉伯文">🇸🇦 阿拉伯文</option>
+      </select>
+      <button class="swap-btn" onclick="swapLang()" title="互换语言">⇄</button>
+      <select id="transTo">
+        <option value="英文">🇺🇸 英文</option>
+        <option value="中文">🇨🇳 中文</option>
+        <option value="日文">🇯🇵 日文</option>
+        <option value="韩文">🇰🇷 韩文</option>
+        <option value="法文">🇫🇷 法文</option>
+        <option value="德文">🇩🇪 德文</option>
+        <option value="西班牙文">🇪🇸 西班牙文</option>
+        <option value="阿拉伯文">🇸🇦 阿拉伯文</option>
+      </select>
+    </div>
+    <div class="kb"><label>翻译风格</label>
+      <select id="transStyle">
+        <option value="直译准确">直译准确</option>
+        <option value="意译流畅">意译流畅</option>
+        <option value="电商专业">电商专业用语</option>
+        <option value="口语化">口语化自然</option>
+      </select>
+    </div>
+    <div class="kb"><label>选择模型</label>
+      <select id="transModel">
+        <option value="deepseek-ai/DeepSeek-V3">🔥 DeepSeek-V3（推荐）</option>
+        <option value="Qwen/Qwen3-235B-A22B">⭐ Qwen3-235B</option>
+        <option value="Qwen/Qwen3-32B">💎 Qwen3-32B</option>
+        <option value="Qwen/Qwen3-8B">🔹 Qwen3-8B（轻快）</option>
+      </select>
+    </div>
+    <div class="trans-row">
+      <textarea class="trans-box" id="transInput" placeholder="请输入要翻译的文字...&#10;&#10;支持长文本，批量翻译商品描述、评论等"></textarea>
+      <textarea class="trans-box" id="transOutput" readonly placeholder="翻译结果显示在这里..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <span class="tag" onclick="setVal('transInput','无抗生素鸡排，108项检测全部合格，高蛋白低脂肪，健康美味')">产品描述</span>
+      <span class="tag" onclick="setVal('transInput','买二送一，限时优惠，库存有限，先到先得')">促销文案</span>
+      <span class="tag" onclick="setVal('transInput','Free shipping on orders over $30. 100% satisfaction guaranteed.')">英→中示例</span>
+    </div>
+    <button class="btn" id="transBtn" onclick="doTrans()">🌐 立即翻译</button>
+  </div>
+</div>
+
+<!-- ============ AI聊天 ============ -->
+<div class="tab-c" id="tab-chat">
+  <div class="section" style="padding:12px">
+    <h3 style="margin-bottom:8px">💬 AI聊天助手</h3>
+    <div class="chat-box">
+      <div class="chat-toolbar">
+        <label>模型：</label>
+        <select id="chatModel" onchange="onModelChange()">
+          <option value="deepseek-ai/DeepSeek-V3">🔥 DeepSeek-V3（推荐）</option>
+          <option value="deepseek-ai/DeepSeek-R1">🧠 DeepSeek-R1（深度推理）</option>
+          <option value="deepseek-ai/DeepSeek-R1-0528">🧠 DeepSeek-R1-0528（最新）</option>
+          <option value="Qwen/Qwen3-235B-A22B">⭐ Qwen3-235B（最强）</option>
+          <option value="Qwen/Qwen3-32B">💎 Qwen3-32B（均衡）</option>
+          <option value="Qwen/Qwen3-14B">🔹 Qwen3-14B（轻快）</option>
+          <option value="Qwen/Qwen3-8B">🔹 Qwen3-8B（免费体验）</option>
+          <option value="Qwen/QwQ-32B">🔍 QwQ-32B（深度推理）</option>
+          <option value="Qwen/Qwen2.5-72B-Instruct">📚 Qwen2.5-72B</option>
+          <option value="meta-llama/Llama-3.3-70B-Instruct">🦙 Llama3.3-70B</option>
+          <option value="THUDM/glm-4-9b-chat">🔷 GLM-4-9B</option>
+        </select>
+        <span id="modelBadge" class="model-badge"></span>
+        <button onclick="clearChat()">🗑️ 清空对话</button>
+      </div>
+      <!-- R1思考过程 -->
+      <div id="thinkingBlock" class="thinking-block"></div>
+      <div class="chat-msgs" id="chatMsgs">
+        <div class="m b">你好！我是智流AI助手，有任何问题都可以问我～<br><br>💡 提示：聊天现在支持 <b>11个模型</b>，点击上方下拉框切换！</div>
+      </div>
+      <div class="chat-input">
+        <textarea id="chatInput" placeholder="输入消息...（Enter发送，Shift+Enter换行）" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doChat()}"></textarea>
+        <button onclick="doChat()">发送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 我的Key ============ -->
+<div class="tab-c" id="tab-key">
+  <div class="section">
+    <h3>🔑 API Key管理</h3>
+    <p class="tips">填入你的API Key即可使用全部功能。<b>换背景功能无需Key</b>（代理内置）</p>
+    <div class="kb"><label>API Key</label><input type="password" id="apikey" placeholder="sk-开头的Key" oninput="saveKey()"></div>
+    <button class="btn2" onclick="toggleKeyVis()" style="margin-bottom:12px;width:auto">👁 显示/隐藏</button>
+    <div id="keyStatus" style="font-size:12px;color:#999;margin-bottom:12px"></div>
+    <h3 style="margin-top:16px;margin-bottom:8px">📦 套餐说明</h3>
+    <div style="font-size:13px;line-height:2">
+      <div style="background:#fff8f5;padding:8px 12px;border-radius:8px;margin-bottom:6px">🆓 <b>体验版 ¥9.9</b> — 100次对话+10次生图</div>
+      <div style="background:#fff8f5;padding:8px 12px;border-radius:8px;margin-bottom:6px">⭐ <b>标准版 ¥49</b> — 不限对话+50次生图/天</div>
+      <div style="background:#fff8f5;padding:8px 12px;border-radius:8px">💎 <b>团队版 ¥199</b> — 5人共用+不限生图</div>
+    </div>
+    <h3 style="margin-top:16px;margin-bottom:8px">🔧 客户端接入</h3>
+    <div style="font-size:13px;line-height:2">
+      可用于任何OpenAI兼容客户端（ChatBox / NextChat / OpenCat / Cherry Studio）：<br>
+      • 接口地址：<code style="background:#f5f5f5;padding:2px 6px;border-radius:4px">http://47.97.101.52/v1</code>
+      <button class="copy-btn" style="position:static;margin-left:8px" onclick="copyText('http://47.97.101.52/v1')">复制</button>
+    </div>
+    <h3 style="margin-top:16px;margin-bottom:8px">🤖 可用模型列表</h3>
+    <div class="badge-row">
+      <span class="badge">DeepSeek-V3</span>
+      <span class="badge">DeepSeek-R1</span>
+      <span class="badge">DeepSeek-R1-0528</span>
+      <span class="badge">Qwen3-235B</span>
+      <span class="badge">Qwen3-32B</span>
+      <span class="badge">Qwen3-14B</span>
+      <span class="badge">Qwen3-8B</span>
+      <span class="badge">QwQ-32B</span>
+      <span class="badge">Qwen2.5-72B</span>
+      <span class="badge">Llama3.3-70B</span>
+      <span class="badge">GLM-4-9B</span>
+      <span class="badge">Kolors</span>
+      <span class="badge">FLUX Schnell</span>
+      <span class="badge">FLUX Dev</span>
+      <span class="badge">SD-XL</span>
+      <span class="badge">SD3.5 Large</span>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = 'http://47.97.101.52/v1/chat/completions';
+var IMG_API = 'http://47.97.101.52/v1/images/generations';
+var EDIT_API = 'http://47.97.101.52/image-edit';
+var hist = [];
+
+// ---- 初始化 ----
+(function init(){
+  var saved = localStorage.getItem('zlk') || '';
+  document.getElementById('apikey').value = saved;
+  updateKeyStatus(saved);
+  updateModelBadge();
+})();
+
+function saveKey(){
+  var v = document.getElementById('apikey').value;
+  localStorage.setItem('zlk', v);
+  updateKeyStatus(v);
+}
+function getKey(){ return document.getElementById('apikey').value.trim(); }
+function updateKeyStatus(k){
+  var el = document.getElementById('keyStatus');
+  if(!el) return;
+  if(k && k.startsWith('sk-')){ el.innerHTML='✅ Key已填写，所有功能可用'; el.style.color='#16a34a'; }
+  else if(k){ el.innerHTML='⚠️ Key格式异常，应以sk-开头'; el.style.color='#d97706'; }
+  else{ el.innerHTML='❌ 未填写Key，仅换背景功能免费体验'; el.style.color='#dc2626'; }
+}
+function toggleKeyVis(){
+  var el = document.getElementById('apikey');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function esc(t){ return t ? t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+function setVal(id, v){ document.getElementById(id).value = v; }
+function copyText(t){
+  navigator.clipboard.writeText(t).then(function(){ showToast('✅ 已复制'); }).catch(function(){ showToast('请手动复制'); });
+}
+function showToast(msg){
+  var d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:9999;pointer-events:none';
+  document.body.appendChild(d);
+  setTimeout(function(){ d.remove(); }, 2000);
+}
+
+function switchTab(id, btn){
+  document.querySelectorAll('#mainTabs button').forEach(function(b){ b.className = ''; });
+  document.querySelectorAll('.tab-c').forEach(function(t){ t.className = 'tab-c'; });
+  if(btn) btn.className = 'on';
+  document.getElementById('tab-' + id).className = 'tab-c on';
+}
+
+// ---- 换背景 ----
+function previewEdit(input){
+  if(!input.files.length) return;
+  var f = input.files[0];
+  var r = new FileReader();
+  r.onload = function(e){
+    document.getElementById('editPreview').innerHTML =
+      '<div class="pi"><img src="'+e.target.result+'"><div class="rm" onclick="clearEdit()">×</div></div>';
+    window._editB64 = e.target.result.split(',')[1];
+    window._editType = f.type;
+  };
+  r.readAsDataURL(f);
+}
+function clearEdit(){
+  document.getElementById('editPreview').innerHTML = '';
+  document.getElementById('editFile').value = '';
+  window._editB64 = null; window._editType = null;
+}
+
+// 拖拽上传
+(function(){
+  var drop = document.getElementById('editDrop');
+  if(!drop) return;
+  drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.style.borderColor='#FF6B35'; });
+  drop.addEventListener('dragleave', function(){ drop.style.borderColor=''; });
+  drop.addEventListener('drop', function(e){
+    e.preventDefault(); drop.style.borderColor='';
+    var f = e.dataTransfer.files[0];
+    if(f && f.type.startsWith('image/')){
+      var inp = document.getElementById('editFile');
+      var dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files;
+      previewEdit(inp);
+    }
+  });
+})();
+
+async function doEdit(){
+  // ✅ 修复：换背景走代理，不需要用户Key
+  var prompt = document.getElementById('editPrompt').value.trim();
+  if(!prompt){ alert('请描述想要的背景'); return; }
+  if(!window._editB64){ alert('请先上传商品图片'); return; }
+  var btn = document.getElementById('editBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> AI处理中...';
+  var res = document.getElementById('editResult');
+  res.innerHTML = '<div class="sp"></div> 正在换背景，大约需要30秒...';
+  try{
+    var r = await fetch(EDIT_API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'Qwen/Qwen-Image-Edit-2509',
+        prompt: prompt,
+        image:'data:'+window._editType+';base64,'+window._editB64,
+        n:1
+      })
+    });
+    var d = await r.json();
+    if(d.data && d.data[0]){
+      var url = d.data[0].url || d.data[0].b64_json;
+      if(url && url.startsWith('http')){
+        res.innerHTML = '<img src="'+url+'" style="max-width:100%;border-radius:8px"><br><a href="'+url+'" download target="_blank" style="color:#FF6B35;font-size:13px;text-decoration:none">📥 点击下载图片</a>';
+      } else if(url){
+        res.innerHTML = '<img src="data:image/png;base64,'+url+'" style="max-width:100%;border-radius:8px">';
+      } else {
+        res.innerHTML = '❌ 返回数据异常：' + esc(JSON.stringify(d).slice(0,200));
+      }
+    } else {
+      res.innerHTML = '❌ ' + esc(JSON.stringify(d.error||d).slice(0,300));
+    }
+  } catch(e){
+    res.innerHTML = '❌ 请求失败：' + esc(e.message);
+  }
+  btn.disabled = false; btn.innerHTML = '✨ 一键换背景';
+}
+
+// ---- 生图 ----
+async function doGen(){
+  var key = getKey();
+  if(!key){ alert('请先在「我的Key」页填写API Key'); return; }
+  var prompt = document.getElementById('genPrompt').value.trim();
+  if(!prompt){ alert('请输入图片描述'); return; }
+  var model = document.getElementById('genModel').value;
+  var size = document.getElementById('genSize').value;
+  var btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> 生成中...';
+  var res = document.getElementById('genResult');
+  res.innerHTML = '<div class="sp"></div> 正在生成图片，请稍候（约10-30秒）...';
+  try{
+    var r = await fetch(IMG_API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:model, prompt:prompt, n:1, image_size:size})
+    });
+    var d = await r.json();
+    if(d.data && d.data[0]){
+      var url = d.data[0].url;
+      res.innerHTML = '<img src="'+url+'" style="max-width:100%;border-radius:8px"><br><a href="'+url+'" download target="_blank" style="color:#FF6B35;font-size:13px;text-decoration:none">📥 点击下载</a>';
+    } else {
+      res.innerHTML = '❌ ' + esc(JSON.stringify(d.error||d).slice(0,300));
+    }
+  } catch(e){
+    res.innerHTML = '❌ 请求失败：' + esc(e.message);
+  }
+  btn.disabled = false; btn.innerHTML = '🎨 生成图片';
+}
+
+// ---- 写文案 ----
+async function doCopy(){
+  var key = getKey();
+  if(!key){ alert('请先在「我的Key」页填写API Key'); return; }
+  var info = document.getElementById('copyInfo').value.trim();
+  var type = document.getElementById('copyType').value;
+  var model = document.getElementById('copyModel').value;
+  if(!info){ alert('请输入商品信息'); return; }
+  var btn = document.getElementById('copyBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> 生成中...';
+  var res = document.getElementById('copyResult');
+  res.innerHTML = '<div class="sp"></div> AI写作中...';
+  try{
+    var sysPrompt = '你是电商文案专家，擅长写各类爆款文案。用户给你商品信息，请帮写【'+type+'】。要求：口语化、不假不空、真实有力、3秒抓住注意力。直接输出文案，不要废话和解释。';
+    var extra = {};
+    // R1/QwQ 开启思维链
+    if(model.includes('R1') || model.includes('QwQ')){ extra.enable_thinking = true; }
+    var r = await fetch(API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify(Object.assign({
+        model:model,
+        messages:[{role:'system',content:sysPrompt},{role:'user',content:info}],
+        stream:true
+      }, extra))
+    });
+    if(!r.ok){ var err = await r.json(); throw new Error(err.error?.message||'请求失败'); }
+    var reader = r.body.getReader(); var decoder = new TextDecoder(); var fullText = '';
+    res.innerHTML = '<div class="result-text" id="copyTextBox"><button class="copy-btn" onclick="copyText(document.getElementById(\'copyTextBox\').innerText.replace(\'复制\',\'\').trim())">复制</button></div>';
+    var box = document.getElementById('copyTextBox');
+    while(true){
+      var chunk = await reader.read(); if(chunk.done) break;
+      var txt = decoder.decode(chunk.value,{stream:true});
+      var lines = txt.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var line = lines[i].trim(); if(!line||!line.startsWith('data:')) continue;
+        var data = line.slice(5); if(data==='[DONE]') break;
+        try{
+          var j = JSON.parse(data);
+          var delta = j.choices && j.choices[0] && j.choices[0].delta;
+          if(delta && delta.content){ fullText += delta.content; box.innerHTML = '<button class="copy-btn" onclick="copyText(document.getElementById(\'copyTextBox\').innerText.replace(\'复制\',\'\').trim())">复制</button>' + esc(fullText); }
+        }catch(e){}
+      }
+    }
+  }catch(e){
+    res.innerHTML = '❌ ' + esc(e.message);
+  }
+  btn.disabled = false; btn.innerHTML = '📝 生成文案';
+}
+
+// ---- 翻译 ----
+function swapLang(){
+  var f = document.getElementById('transFrom');
+  var t = document.getElementById('transTo');
+  var tmp = f.value; f.value = t.value; t.value = tmp;
+  // 同时交换文本
+  var inp = document.getElementById('transInput');
+  var out = document.getElementById('transOutput');
+  var tmpTxt = inp.value; inp.value = out.value; out.value = tmpTxt;
+}
+
+async function doTrans(){
+  var key = getKey();
+  if(!key){ alert('请先在「我的Key」页填写API Key'); return; }
+  var text = document.getElementById('transInput').value.trim();
+  if(!text){ alert('请输入要翻译的文字'); return; }
+  var from = document.getElementById('transFrom').value;
+  var to = document.getElementById('transTo').value;
+  var style = document.getElementById('transStyle').value;
+  var model = document.getElementById('transModel').value;
+  var btn = document.getElementById('transBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> 翻译中...';
+  var out = document.getElementById('transOutput');
+  out.value = '翻译中...';
+  try{
+    var sysPrompt = '你是专业翻译，请将以下'+from+'文本翻译成'+to+'。风格要求：'+style+'。只输出翻译结果，不要任何解释或注释。';
+    var r = await fetch(API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:model, messages:[{role:'system',content:sysPrompt},{role:'user',content:text}], stream:true})
+    });
+    if(!r.ok){ var err = await r.json(); throw new Error(err.error?.message||'请求失败'); }
+    var reader = r.body.getReader(); var decoder = new TextDecoder(); var fullText = '';
+    out.value = '';
+    while(true){
+      var chunk = await reader.read(); if(chunk.done) break;
+      var txt = decoder.decode(chunk.value,{stream:true});
+      var lines = txt.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var line = lines[i].trim(); if(!line||!line.startsWith('data:')) continue;
+        var data = line.slice(5); if(data==='[DONE]') break;
+        try{
+          var j = JSON.parse(data);
+          var delta = j.choices && j.choices[0] && j.choices[0].delta;
+          if(delta && delta.content){ fullText += delta.content; out.value = fullText; }
+        }catch(e){}
+      }
+    }
+  }catch(e){
+    out.value = '❌ ' + e.message;
+  }
+  btn.disabled = false; btn.innerHTML = '🌐 立即翻译';
+}
+
+// ---- 聊天 ----
+function onModelChange(){
+  updateModelBadge();
+  // 切换模型时不清空对话历史，只提示
+  var model = document.getElementById('chatModel').value;
+  var msgs = document.getElementById('chatMsgs');
+  if(model.includes('R1') || model.includes('QwQ')){
+    msgs.innerHTML += '<div class="m b" style="background:#fff8e7;font-size:12px;color:#856404">💡 已切换到推理模型，回答前会进行深度思考，速度较慢但质量更高</div>';
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function updateModelBadge(){
+  var sel = document.getElementById('chatModel');
+  var badge = document.getElementById('modelBadge');
+  if(sel && badge){
+    var text = sel.options[sel.selectedIndex]?.text || '';
+    var name = text.replace(/[🔥🧠⭐💎🔹🔍📚🦙🔷]/g,'').trim().split('（')[0].trim();
+    badge.textContent = name;
+  }
+}
+function clearChat(){
+  hist = [];
+  document.getElementById('chatMsgs').innerHTML = '<div class="m b">对话已清空，开始新的对话吧～</div>';
+  document.getElementById('thinkingBlock').className = 'thinking-block';
+}
+
+async function doChat(){
+  var key = getKey();
+  if(!key){ alert('请先在「我的Key」页填写API Key'); return; }
+  var input = document.getElementById('chatInput');
+  var t = input.value.trim(); if(!t) return;
+  input.value = '';
+  var model = document.getElementById('chatModel').value;
+  var msgs = document.getElementById('chatMsgs');
+  msgs.innerHTML += '<div class="m u">'+esc(t)+'</div>';
+  var ld = document.createElement('div'); ld.className = 'm b'; ld.innerHTML = '<div class="sp"></div> 思考中...';
+  msgs.appendChild(ld);
+  msgs.scrollTop = msgs.scrollHeight;
+  hist.push({role:'user', content:t});
+  var thinkBox = document.getElementById('thinkingBlock');
+  thinkBox.className = 'thinking-block'; thinkBox.textContent = '';
+
+  try{
+    var body = {model:model, messages:hist, stream:true};
+    // R1/QwQ开启思维链
+    if(model.includes('R1') || model.includes('QwQ')){ body.enable_thinking = true; }
+    var r = await fetch(API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify(body)
+    });
+    if(!r.ok){ var err = await r.json(); throw new Error(err.error?.message||'请求失败'); }
+    var reader = r.body.getReader(); var decoder = new TextDecoder();
+    var fullText = ''; var thinkText = ''; ld.textContent = '';
+    while(true){
+      var chunk = await reader.read(); if(chunk.done) break;
+      var txt = decoder.decode(chunk.value,{stream:true});
+      var lines = txt.split('\n');
+      for(var i=0;i<lines.length;i++){
+        var line = lines[i].trim(); if(!line||!line.startsWith('data:')) continue;
+        var data = line.slice(5); if(data==='[DONE]') break;
+        try{
+          var j = JSON.parse(data);
+          var delta = j.choices && j.choices[0] && j.choices[0].delta;
+          if(!delta) continue;
+          // 思维链内容
+          if(delta.reasoning_content){
+            thinkText += delta.reasoning_content;
+            thinkBox.className = 'thinking-block show';
+            thinkBox.textContent = '💭 ' + thinkText;
+            thinkBox.scrollTop = thinkBox.scrollHeight;
+          }
+          if(delta.content){
+            fullText += delta.content;
+            ld.innerHTML = esc(fullText);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+        }catch(e){}
+      }
+    }
+    hist.push({role:'assistant', content:fullText});
+    // 添加复制按钮
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn'; copyBtn.textContent = '复制';
+    copyBtn.style.cssText = 'position:static;display:inline-block;margin-top:4px';
+    copyBtn.onclick = function(){ copyText(fullText); };
+    ld.appendChild(document.createElement('br'));
+    ld.appendChild(copyBtn);
+  }catch(e){
+    ld.innerHTML = '❌ ' + esc(e.message);
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+</script>
+</body>
+</html>
